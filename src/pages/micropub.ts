@@ -57,14 +57,16 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   const props = body.properties || {};
-  const title = props.name?.[0] || 'Untitled';
   const rawContent = props.content?.[0] || '';
   // iA Writer sends content as {html: "..."} or plain string
   let content = typeof rawContent === 'object' && rawContent.html
     ? rawContent.html
     : String(rawContent);
+  // Extract title from first heading if present, otherwise use name property
+  const headingMatch = content.match(/^\s*#+ (.+)/);
+  const title = headingMatch ? headingMatch[1].trim() : (props.name?.[0] || 'Untitled');
   // Strip leading heading — it becomes the frontmatter title
-  content = content.replace(/^\s*#+ .+\n*/, '');
+  if (headingMatch) content = content.replace(/^\s*#+ .+\n*/, '');
   const isDraft = false;
   const baseSlug = slugify(title);
   const slug = baseSlug || `post-${Date.now()}`;
