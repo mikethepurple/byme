@@ -1,0 +1,8 @@
+name = "blog-erikov-me"
+compatibility_date = "2024-12-01"
+pages_build_output_dir = "dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "blog-subscribers"
+database_id = "c6ba632e-b1c9-47d3-aa25-3d1b4adf0e19"

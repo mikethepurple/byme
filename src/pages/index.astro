@@ -1,0 +1,53 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import PostCard from '../components/PostCard.astro';
+import Footer from '../components/Footer.astro';
+
+export const prerender = true;
+
+const allPosts = await getCollection('posts');
+
+const posts = allPosts
+  .filter((p) => !p.data.draft)
+  .sort((a, b) => {
+    const dateA = new Date(a.data.date).getTime();
+    const dateB = new Date(b.data.date).getTime();
+    return dateB - dateA;
+  });
+---
+
+<Base title="by.erikov.me" description="Misha Erikov — writing about building, making, and thinking out loud.">
+  <Header />
+
+  <main>
+    {posts.length === 0 && (
+      <p class="empty">Nothing here yet. Check back soon.</p>
+    )}
+
+    {posts.map((post) => (
+      <PostCard
+        slug={post.id}
+        title={post.data.title}
+        date={post.data.date}
+        description={post.data.description}
+      />
+    ))}
+  </main>
+
+  <Footer />
+</Base>
+
+<style>
+  main {
+    min-height: 40vh;
+  }
+
+  .empty {
+    color: var(--ink-3);
+    font-size: 0.95rem;
+    padding: 4rem 0;
+    text-align: center;
+  }
+</style>
