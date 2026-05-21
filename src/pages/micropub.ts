@@ -63,7 +63,7 @@ export const POST: APIRoute = async ({ request }) => {
   const content = typeof rawContent === 'object' && rawContent.html
     ? rawContent.html
     : String(rawContent);
-  const isDraft = props['post-status']?.[0] === 'draft';
+  const isDraft = false;
   const baseSlug = slugify(title);
   const slug = baseSlug || `post-${Date.now()}`;
   const date = todayISO();
