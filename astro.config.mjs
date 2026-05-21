@@ -7,7 +7,6 @@ import cloudflare from '@astrojs/cloudflare';
 
 export default defineConfig({
   site: 'https://by.erikov.me',
-  output: 'hybrid',
   adapter: cloudflare(),
   integrations: [react(), markdoc(), keystatic()],
 });
