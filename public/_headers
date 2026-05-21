@@ -1,0 +1,4 @@
+/*
+  Link: <https://by.erikov.me/micropub>; rel="micropub"
+  Link: <https://by.erikov.me/auth>; rel="authorization_endpoint"
+  Link: <https://by.erikov.me/auth/token>; rel="token_endpoint"

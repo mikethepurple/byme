@@ -9,4 +9,7 @@ export default defineConfig({
   site: 'https://by.erikov.me',
   adapter: cloudflare(),
   integrations: [react(), markdoc(), keystatic()],
+  security: {
+    checkOrigin: false,
+  },
 });

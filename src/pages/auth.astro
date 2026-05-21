@@ -1,0 +1,74 @@
+---
+export const prerender = false;
+
+const url = new URL(Astro.request.url);
+const me = url.searchParams.get('me');
+const clientId = url.searchParams.get('client_id');
+const redirectUri = url.searchParams.get('redirect_uri');
+const state = url.searchParams.get('state');
+const scope = url.searchParams.get('scope') || 'create';
+const responseType = url.searchParams.get('response_type') || 'code';
+
+// If POST, validate password and redirect with code
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const password = form.get('password');
+  const postRedirectUri = form.get('redirect_uri') as string;
+  const postState = form.get('state') as string;
+  const postScope = form.get('scope') as string;
+  const postClientId = form.get('client_id') as string;
+  const postMe = form.get('me') as string;
+
+  if (password === process.env.MICROPUB_TOKEN) {
+    // Generate a short-lived auth code
+    const code = crypto.randomUUID();
+    // Store code in a cookie (worker has no persistent storage between requests,
+    // so we'll encode the grant info in the code itself using encryption)
+    const grantData = JSON.stringify({ scope: postScope, clientId: postClientId, me: postMe, ts: Date.now() });
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey('raw', encoder.encode(process.env.KEYSTATIC_SECRET!.slice(0, 32)), 'AES-GCM', false, ['encrypt']);
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoder.encode(grantData));
+    const payload = btoa(String.fromCharCode(...iv)) + '.' + btoa(String.fromCharCode(...new Uint8Array(encrypted)));
+
+    const redirect = new URL(postRedirectUri);
+    redirect.searchParams.set('code', payload);
+    redirect.searchParams.set('state', postState);
+    return Astro.redirect(redirect.toString(), 302);
+  }
+
+  // Wrong password - fall through to show form again with error
+}
+---
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Authorize</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; background: #f4f3f0; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+    .card { background: white; border-radius: 12px; padding: 2rem; max-width: 360px; width: 100%; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    h1 { font-size: 1.2rem; margin: 0 0 0.5rem; }
+    p { color: #666; font-size: 0.9rem; margin: 0 0 1.5rem; }
+    code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem; }
+    input[type=password] { width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; box-sizing: border-box; margin-bottom: 1rem; }
+    button { width: 100%; padding: 0.6rem; background: #2f2e2b; color: white; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; }
+    button:hover { opacity: 0.85; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Authorize</h1>
+    <p><code>{clientId}</code> wants to access your site with scope <code>{scope}</code>.</p>
+    <form method="POST">
+      <input type="hidden" name="redirect_uri" value={redirectUri} />
+      <input type="hidden" name="state" value={state} />
+      <input type="hidden" name="scope" value={scope} />
+      <input type="hidden" name="client_id" value={clientId} />
+      <input type="hidden" name="me" value={me} />
+      <input type="password" name="password" placeholder="Token" autofocus />
+      <button type="submit">Authorize</button>
+    </form>
+  </div>
+</body>
+</html>
