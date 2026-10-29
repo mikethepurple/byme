@@ -1,9 +1,9 @@
 ---
-// The right pane: the feed, narrowed to whatever the index has in force, and
-// a one-line label saying so. When a post is open it sits at the top with its
-// facts (a ruled key/value table); the feed of its scope continues below.
+// The right pane: one ruled row saying what the feed shows and the kind tabs,
+// then the feed. When a post is open it sits above with its facts (a ruled
+// key/value table); the feed of its scope continues below.
 import Block from './Block.astro';
-import type { Post } from '../lib/load';
+import type { Post, Lane } from '../lib/load';
 
 export interface Row {
   key: string;
@@ -13,8 +13,9 @@ export interface Row {
 }
 
 interface Props {
-  label: string; // what the feed is showing: "everything", "Ada · photos", "October 2026"
-  clear?: string; // where "all" goes when the feed is narrowed
+  label: string; // "everything", "Ada", "October 2026", "more in Ada"
+  base?: string; // where the tabs live: '' (front), '/ada', '/2026-10'
+  lane?: Lane;
   posts: Post[];
   things: Map<string, string>;
   older?: string;
@@ -22,7 +23,13 @@ interface Props {
   rows?: Row[];
 }
 
-const { label, clear, posts, things, older, newer, rows = [] } = Astro.props;
+const { label, base = '', lane, posts, things, older, newer, rows = [] } = Astro.props;
+const tabs: { id: Lane | 'all'; href: string }[] = [
+  { id: 'all', href: base || '/' },
+  { id: 'photos', href: `${base}/photos` },
+  { id: 'longreads', href: `${base}/longreads` },
+  { id: 'notes', href: `${base}/notes` },
+];
 ---
 
 {
@@ -54,8 +61,14 @@ const { label, clear, posts, things, older, newer, rows = [] } = Astro.props;
 <slot />
 
 <div class="scope small">
-  <span>{label}</span>
-  {clear && <a href={clear}>all</a>}
+  <span class="what">{label}</span>
+  <nav class="tabs">
+    {tabs.map((t) => (
+      <a href={t.href} class:list={[{ on: t.id === 'all' ? !lane : t.id === lane }]}>
+        {t.id}
+      </a>
+    ))}
+  </nav>
 </div>
 
 {posts.length === 0 && <p class="empty small">Nothing here yet.</p>}
@@ -88,13 +101,17 @@ const { label, clear, posts, things, older, newer, rows = [] } = Astro.props;
   .scope {
     display: flex;
     justify-content: space-between;
+    align-items: baseline;
     gap: 1rem;
+    flex-wrap: wrap;
     padding: 14px var(--page-pad) 12px;
     border-bottom: 1px solid var(--line);
-    color: var(--ink-2);
   }
-  .scope a { color: var(--ink-2); text-decoration: none; }
-  .scope a:hover { color: var(--ink); }
+  .what { color: var(--ink); }
+  .tabs { display: flex; gap: 1rem; }
+  .tabs a { color: var(--ink-2); text-decoration: none; }
+  .tabs a.on, .tabs a:hover { color: var(--ink); }
+  .tabs a.on { color: var(--accent); }
 
   .empty { padding: 2rem var(--page-pad); }
 

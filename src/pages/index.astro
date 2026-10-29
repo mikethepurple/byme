@@ -16,6 +16,7 @@ const names = thingNames(things);
   <Column
     slot="right"
     label="everything"
+    base=""
     posts={posts.slice(0, PAGE_SIZE)}
     things={names}
     older={posts.length > PAGE_SIZE ? '/page/2' : undefined}
