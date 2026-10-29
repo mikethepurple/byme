@@ -49,16 +49,15 @@ const lanes: { id: NonNullable<Props['lane']>; href: string }[] = [
   .lanes {
     display: flex;
     gap: 1rem;
-    padding: 0 0 0.75rem;
+    padding: 0 0 12px;
+    border-bottom: 1px solid var(--line);
   }
   .lanes a { text-decoration: none; color: var(--ink-2); }
   .lanes a.on, .lanes a:hover { color: var(--ink); }
 
   .empty {
-    border: 1px solid var(--line);
-    padding: 2rem 12px;
-    text-align: center;
+    padding: 2rem 0;
   }
 
-  .pages { display: flex; gap: 1rem; padding: 0.5rem 0; }
+  .pages { display: flex; gap: 1rem; padding: 1rem 0; }
 </style>

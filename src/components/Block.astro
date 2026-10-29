@@ -60,19 +60,19 @@ const link = post.data.link || '';
 </article>
 
 <style>
+  /* A ruled list, not a card: one hairline under each post, nothing around it. */
   .block {
-    border: 1px solid var(--line);
-    padding: 12px;
-    margin-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+    padding: 20px 0 18px;
   }
 
-  .media { display: block; margin: 0 0 12px; }
+  .media { display: block; margin: 0 0 14px; }
   .media :global(img) { width: 100%; }
 
   .media.set {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 4px;
+    gap: 2px;
     position: relative;
   }
   .media.set :global(img) { aspect-ratio: 1 / 1; object-fit: cover; }

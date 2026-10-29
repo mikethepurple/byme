@@ -27,21 +27,23 @@ const blanks = things.length % 2;
 </Base>
 
 <style>
+  /* Two panes under the header, each the full height of the window, each
+     scrolling on its own with no visible scrollbar. Narrow screens fall back
+     to one normal page: grid, then stream. */
   .front {
     display: grid;
     grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
     gap: 1px;
     background: var(--line);
-    border-bottom: 1px solid var(--line);
   }
 
   .grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-auto-rows: minmax(44vh, auto);
+    grid-auto-rows: minmax(40vh, 1fr);
     gap: 1px;
     background: var(--line);
-    align-content: start;
+    align-content: stretch;
   }
 
   .blank { background: var(--bg); }
@@ -53,8 +55,27 @@ const blanks = things.length % 2;
 
   .side :global(.stream) { max-width: none; }
 
+  @media (min-width: 901px) {
+    :global(html), :global(body.app) { height: 100%; }
+    :global(body.app) {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      overflow: hidden;
+    }
+    :global(body.app > header) { flex: none; }
+    .front { flex: 1 1 auto; min-height: 0; }
+    .grid, .side {
+      height: 100%;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: none;
+    }
+    .grid::-webkit-scrollbar, .side::-webkit-scrollbar { display: none; }
+  }
+
   @media (max-width: 900px) {
-    .front { grid-template-columns: minmax(0, 1fr); }
+    .front { grid-template-columns: minmax(0, 1fr); border-bottom: 1px solid var(--line); }
     .grid { grid-template-columns: minmax(0, 1fr); grid-auto-rows: auto; }
     .blank { display: none; }
   }
