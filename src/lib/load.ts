@@ -38,6 +38,40 @@ export function postsIn(posts: Post[], lane: Lane): Post[] {
   return posts.filter((p) => laneOf(p.kind) === lane);
 }
 
+export interface Scope {
+  thing?: string;
+  lane?: Lane;
+  month?: string; // YYYY-MM
+}
+
+/** The feed narrowed to what the index has in force. */
+export function scopePosts(posts: Post[], s: Scope): Post[] {
+  let out = posts;
+  if (s.thing) out = postsOf(out, s.thing);
+  if (s.lane) out = postsIn(out, s.lane);
+  if (s.month) out = out.filter((p) => p.data.date.startsWith(s.month!));
+  return out;
+}
+
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+export function monthLabel(m: string): string {
+  return `${MONTH_NAMES[+m.slice(5, 7) - 1]} ${m.slice(0, 4)}`;
+}
+
+/** "everything", "Ada", "Ada · photos", "October 2026" */
+export function scopeLabel(s: Scope, names: Map<string, string>): string {
+  const parts: string[] = [];
+  if (s.thing) parts.push(names.get(s.thing) ?? s.thing);
+  if (s.lane) parts.push(s.lane);
+  if (s.month) parts.push(monthLabel(s.month));
+  return parts.length ? parts.join(' · ') : 'everything';
+}
+
+export function monthsOf(posts: Post[]): string[] {
+  return Array.from(new Set(posts.map((p) => p.data.date.slice(0, 7)))).sort().reverse();
+}
+
 /** First line of the text, for titles in feeds and tabs. */
 export function firstLine(text: string, max = 80): string {
   const line = text.split('\n').map((l) => l.trim()).find((l) => l.length > 0) ?? '';

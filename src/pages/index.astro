@@ -1,7 +1,7 @@
 ---
 import TwoPane from '../layouts/TwoPane.astro';
-import ThingCell from '../components/ThingCell.astro';
-import Side from '../components/Side.astro';
+import Index from '../components/Index.astro';
+import Column from '../components/Column.astro';
 import { loadPosts, loadThings, thingNames, PAGE_SIZE } from '../lib/load';
 
 export const prerender = true;
@@ -9,34 +9,15 @@ export const prerender = true;
 const things = await loadThings();
 const posts = await loadPosts();
 const names = thingNames(things);
-// The grid keeps its 2-up rhythm: with an odd number of things the last cell stays empty.
-const blanks = things.length % 2;
 ---
 
-<TwoPane title="by.erikov.me" section="projects">
-  <section slot="left" class="grid">
-    {things.map((t, i) => <ThingCell thing={t} index={i + 1} />)}
-    {blanks > 0 && <div class="blank" />}
-  </section>
-
-  <Side slot="right" posts={posts.slice(0, PAGE_SIZE)} things={names} lane="all" older={posts.length > PAGE_SIZE ? '/stream/2' : undefined} />
+<TwoPane title="by.erikov.me">
+  <Index slot="left" things={things} posts={posts} />
+  <Column
+    slot="right"
+    label="everything"
+    posts={posts.slice(0, PAGE_SIZE)}
+    things={names}
+    older={posts.length > PAGE_SIZE ? '/page/2' : undefined}
+  />
 </TwoPane>
-
-<style>
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-auto-rows: minmax(40vh, 1fr);
-    gap: 1px;
-    background: var(--line);
-    align-content: stretch;
-    min-height: 100%;
-  }
-
-  .blank { background: var(--bg); }
-
-  @media (max-width: 900px) {
-    .grid { grid-template-columns: minmax(0, 1fr); grid-auto-rows: auto; min-height: 0; }
-    .blank { display: none; }
-  }
-</style>

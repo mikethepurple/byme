@@ -1,0 +1,114 @@
+---
+// The left pane, the same on every page: the projects as a grid, then When and
+// Kinds as ruled lists. Every entry is a link that narrows the feed; the ones
+// in force are marked. No counts.
+import ThingCell from './ThingCell.astro';
+import type { Post, Thing, Lane } from '../lib/load';
+
+interface Props {
+  things: Thing[];
+  posts: Post[];
+  thing?: string;
+  lane?: Lane;
+  month?: string;
+}
+
+const { things, posts, thing, lane, month } = Astro.props;
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const months = Array.from(new Set(posts.map((p) => p.data.date.slice(0, 7)))).sort().reverse();
+const years = Array.from(new Set(months.map((m) => m.slice(0, 4))));
+const base = thing ? `/${thing}` : '';
+const kinds: { id: Lane | 'all'; label: string; href: string }[] = [
+  { id: 'all', label: 'everything', href: base || '/' },
+  { id: 'photos', label: 'photos and sets', href: `${base}/photos` },
+  { id: 'longreads', label: 'longreads', href: `${base}/longreads` },
+  { id: 'notes', label: 'notes and links', href: `${base}/notes` },
+];
+const blanks = things.length % 2;
+---
+
+<section class="cells">
+  {things.map((t, i) => <ThingCell thing={t} index={i + 1} on={t.id === thing} />)}
+  {blanks > 0 && <div class="blank" />}
+</section>
+
+<section class="list">
+  <h2 class="label small">When</h2>
+  {
+    years.map((y) => (
+      <div class="year">
+        <span class="y">{y}</span>
+        <span class="months">
+          {months
+            .filter((m) => m.startsWith(y))
+            .map((m) => (
+              <a href={`/${m}`} class:list={[{ on: m === month }]}>
+                {MONTHS[+m.slice(5, 7) - 1]}
+              </a>
+            ))}
+        </span>
+      </div>
+    ))
+  }
+</section>
+
+<section class="list">
+  <h2 class="label small">Kinds</h2>
+  {
+    kinds.map((k) => (
+      <a class:list={['line', { on: k.id === 'all' ? !lane : k.id === lane }]} href={k.href}>
+        {k.label}
+      </a>
+    ))
+  }
+</section>
+
+<style>
+  .cells {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: minmax(38vh, auto);
+    gap: 1px;
+    background: var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .blank { background: var(--bg); }
+
+  .list { padding: 20px 0 8px; }
+  .label {
+    font-weight: 400;
+    color: var(--ink-3);
+    margin: 0;
+    padding: 0 var(--page-pad) 8px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .year {
+    display: grid;
+    grid-template-columns: 5rem minmax(0, 1fr);
+    gap: 1rem;
+    padding: 10px var(--page-pad);
+    border-bottom: 1px solid var(--line);
+  }
+  .y { color: var(--ink-2); }
+  .months { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; }
+  .months a { text-decoration: none; color: var(--ink); }
+  .months a.on { color: var(--accent); }
+  .months a:hover { text-decoration: underline; }
+
+  .line {
+    display: block;
+    padding: 10px var(--page-pad);
+    border-bottom: 1px solid var(--line);
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .line:hover { text-decoration: underline; }
+  .line.on { color: var(--accent); }
+
+  @media (max-width: 900px) {
+    .cells { grid-template-columns: minmax(0, 1fr); grid-auto-rows: auto; }
+    .blank { display: none; }
+  }
+</style>

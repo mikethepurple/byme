@@ -1,19 +1,21 @@
 ---
-// One cell of the front grid: the number and name do the work; the picture is
+// One cell of the index grid: the number and name do the work; the picture is
 // small and uncropped, parked in the corner. No picture is a fine cell too.
+// `on` marks the project whose posts the feed is showing.
 import { Image } from 'astro:assets';
 import type { Thing } from '../lib/load';
 
 interface Props {
   thing: Thing;
   index: number;
+  on?: boolean;
 }
 
-const { thing, index } = Astro.props;
+const { thing, index, on = false } = Astro.props;
 const n = String(index).padStart(2, '0');
 ---
 
-<a href={`/${thing.id}`} class="cell">
+<a href={`/${thing.id}`} class:list={['cell', { on }]}>
   <div class="head">
     <span class="n small">{n}</span>
     <span class="name">{thing.data.name}</span>
@@ -41,7 +43,13 @@ const n = String(index).padStart(2, '0');
     min-height: 0;
   }
 
-  .cell:hover .name { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 6px; }
+  .cell:hover .name, .cell.on .name {
+    text-decoration: underline;
+    text-decoration-color: var(--accent);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 8px;
+  }
+  .cell.on .n { color: var(--accent); }
 
   .head {
     display: flex;
@@ -58,10 +66,7 @@ const n = String(index).padStart(2, '0');
     line-height: 1;
   }
 
-  .line {
-    max-width: 32ch;
-    margin: 0;
-  }
+  .line { max-width: 32ch; margin: 0; }
 
   .pic {
     position: absolute;
@@ -71,14 +76,9 @@ const n = String(index).padStart(2, '0');
     max-width: 320px;
   }
 
-  .pic :global(img) {
-    width: 100%;
-    height: auto;
-    display: block;
-  }
+  .pic :global(img) { width: 100%; height: auto; display: block; }
 
   @media (max-width: 900px) {
-    .cell { min-height: 0; padding-bottom: 20px; }
     .pic { position: static; width: 45%; margin-top: 0.75rem; }
   }
 </style>

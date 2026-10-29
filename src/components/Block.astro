@@ -1,26 +1,24 @@
 ---
 import { Image } from 'astro:assets';
 import { render } from 'astro:content';
-import { formatShort, laneOf } from '../lib/posts';
+import { formatShort } from '../lib/posts';
 import type { Post } from '../lib/load';
 
 interface Props {
   post: Post;
   things: Map<string, string>; // thing id → name
-  current?: boolean; // the post open on the left
 }
 
-const { post, things, current = false } = Astro.props;
+const { post, things } = Astro.props;
 const { Content } = await render(post);
 const href = `/${post.id}`;
 const imgs = post.data.images;
 const kind = post.kind;
 const hasText = post.text.length > 0;
 const link = post.data.link || '';
-const month = post.data.date.slice(0, 7);
 ---
 
-<article class:list={['block', `kind-${kind}`, { on: current }]} data-lane={laneOf(kind)} data-month={month}>
+<article class={`block kind-${kind}`}>
   {
     imgs.length === 1 && (
       <a href={href} class="media">
@@ -65,10 +63,8 @@ const month = post.data.date.slice(0, 7);
   /* A ruled list, not a card: one hairline under each post, nothing around it. */
   .block {
     border-bottom: 1px solid var(--line);
-    padding: 20px 0 18px;
+    padding: 20px var(--page-pad) 18px;
   }
-
-  .block.on .meta time { color: var(--accent); }
 
   .media { display: block; margin: 0 0 14px; }
   .media :global(img) { width: 100%; }
