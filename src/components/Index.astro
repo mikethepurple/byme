@@ -32,7 +32,7 @@ const pickedIndex = picked ? things.indexOf(picked) + 1 : 0;
             <span class="n small" transition:name={`thing-${picked.id}-n`}>{String(pickedIndex).padStart(2, '0')}</span>
             <span class="name" transition:name={`thing-${picked.id}`}>{picked.data.name}</span>
           </div>
-          {picked.data.line && <p class="line">{picked.data.line}</p>}
+          {picked.data.line && <p class="blurb">{picked.data.line}</p>}
           {picked.data.try.length > 0 && (
             <p class="try">
               {picked.data.try.map((l) => (
@@ -126,7 +126,7 @@ const pickedIndex = picked ? things.indexOf(picked) + 1 : 0;
     letter-spacing: -0.03em;
     line-height: 0.95;
   }
-  .line { max-width: 40ch; margin: 0.75rem 0 0.75rem; color: var(--ink-2); }
+  .blurb { max-width: 40ch; margin: 0.75rem 0 0.75rem; color: var(--ink-2); }
   .try { display: flex; gap: 1rem; margin: 0; }
   .pic :global(img) { width: 100%; height: auto; display: block; }
 
