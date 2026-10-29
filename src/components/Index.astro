@@ -187,6 +187,8 @@ const pickedIndex = picked ? things.indexOf(picked) + 1 : 0;
 
   /* In the 1/3 menu the stage stacks: text, then the picture. */
   @container (max-width: 640px) {
+    .cells { grid-template-columns: minmax(0, 1fr); grid-auto-rows: minmax(24vh, auto); }
+    .blank { display: none; }
     .hero { grid-template-columns: minmax(0, 1fr); align-items: start; min-height: 0; padding-bottom: 20px; }
     .name { font-size: clamp(2.5rem, 11cqw, 4.5rem); }
     .pic { max-width: 70%; }
