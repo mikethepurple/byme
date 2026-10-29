@@ -40,12 +40,18 @@ const ogImage = image ? new URL(image, Astro.site ?? Astro.url).href : undefined
     // every in-place navigation.
     (function () {
       var KEY = 'theme';
+      // ?theme= is read once, then dropped from the address so the toggle wins afterwards.
+      try {
+        var q = new URLSearchParams(location.search).get('theme');
+        if (q === 'light' || q === 'dark') {
+          localStorage.setItem(KEY, q);
+          var u = new URL(location.href);
+          u.searchParams.delete('theme');
+          history.replaceState(null, '', u.pathname + u.search + u.hash);
+        }
+      } catch (e) {}
       function chosen() {
-        try {
-          var q = new URLSearchParams(location.search).get('theme');
-          if (q === 'light' || q === 'dark') localStorage.setItem(KEY, q);
-          return localStorage.getItem(KEY);
-        } catch (e) { return null; }
+        try { return localStorage.getItem(KEY); } catch (e) { return null; }
       }
       function isDark() {
         var t = document.documentElement.dataset.theme;
