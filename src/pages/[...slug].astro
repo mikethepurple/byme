@@ -33,8 +33,10 @@ export async function getStaticPaths() {
   const things = await loadThings();
   const posts = await loadPosts();
   const paths: { params: { slug: string }; props: Props }[] = [];
-  const reserved = new Set<string>([...LANES, 'page', 'rss.xml', 'micropub', 'auth', 'keystatic']);
+  const reserved = new Set<string>([...LANES, 'everything', 'page', 'rss.xml', 'micropub', 'auth', 'keystatic']);
 
+  // "everything": the whole feed with the 1/3 menu (the front keeps the grid).
+  paths.push({ params: { slug: 'everything' }, props: { type: 'browse' } });
   for (const lane of LANES) paths.push({ params: { slug: lane }, props: { type: 'browse', lane } });
   for (const t of things) {
     if (reserved.has(t.id) || /^\d{4}-\d\d/.test(t.id)) throw new Error(`Thing slug "${t.id}" is reserved`);
@@ -138,7 +140,7 @@ const base = scope.thing ? `/${scope.thing}` : scope.month ? `/${scope.month}` :
 
 <TwoPane title={title} description={description} image={image} type={props.type === 'read' ? 'article' : 'website'} mode={props.type === 'read' ? 'read' : 'browse'}>
   <Index slot="left" things={things} posts={posts} thing={scope.thing} month={scope.month} compact />
-  <Column slot="right" label={label} root={label === 'everything' ? undefined : '/'} base={base} lane={scope.lane} posts={feed} things={names} older={older} newer={newer} rows={rows}>
+  <Column slot="right" label={label} root={label === 'everything' ? undefined : '/everything'} base={base} lane={scope.lane} posts={feed} things={names} older={older} newer={newer} rows={rows}>
     {
       props.type === 'read' && (
         <article class="open" transition:name={`post-${props.post.id}`}>

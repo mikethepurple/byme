@@ -28,7 +28,7 @@ const pickedIndex = picked ? things.indexOf(picked) + 1 : 0;
 {
   picked || compact ? (
     <section class="picked">
-      <a href="/" class:list={['row', 'every', { on: !picked }]}>
+      <a href="/everything" class:list={['row', 'every', { on: !picked }]}>
         <span class="n small"></span>
         <span class="rname">everything</span>
         <span class="rline small">all projects, the whole feed</span>
@@ -88,7 +88,7 @@ const pickedIndex = picked ? things.indexOf(picked) + 1 : 0;
 
 <section class="list">
   <h2 class="label small">When</h2>
-  <a href={thing ? `/${thing}` : '/'} class:list={['line', { on: !month }]}>all time</a>
+  <a href={thing ? `/${thing}` : '/everything'} class:list={['line', { on: !month }]}>all time</a>
   {
     years.map((y) => (
       <div class="year">

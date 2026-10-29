@@ -15,7 +15,8 @@ export interface Row {
 interface Props {
   label: string; // "everything", "Ada", "October 2026", "more in Ada"
   root?: string; // when narrowed: where "everything" goes
-  base?: string; // where the tabs live: '' (front), '/ada', '/2026-10'
+  base?: string; // where the tabs live: '' (everything), '/ada', '/2026-10'
+  allHref?: string; // where the "all" tab goes when there is no base
   lane?: Lane;
   posts: Post[];
   things: Map<string, string>;
@@ -24,9 +25,9 @@ interface Props {
   rows?: Row[];
 }
 
-const { label, root, base = '', lane, posts, things, older, newer, rows = [] } = Astro.props;
+const { label, root, base = '', allHref = '/everything', lane, posts, things, older, newer, rows = [] } = Astro.props;
 const tabs: { id: Lane | 'all'; href: string }[] = [
-  { id: 'all', href: base || '/' },
+  { id: 'all', href: base || allHref },
   { id: 'photos', href: `${base}/photos` },
   { id: 'longreads', href: `${base}/longreads` },
   { id: 'notes', href: `${base}/notes` },
