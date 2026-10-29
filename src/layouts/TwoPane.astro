@@ -12,13 +12,14 @@ interface Props {
   image?: string;
   type?: 'website' | 'article';
   mode?: 'browse' | 'read';
+  split?: 'front' | 'feed'; // front: menu 2/3, feed 1/3; feed: menu 1/3, feed 2/3
 }
 
-const { title, description, image, type, mode = 'browse' } = Astro.props;
+const { title, description, image, type, mode = 'browse', split = 'feed' } = Astro.props;
 ---
 
-<Base title={title} description={description} image={image} type={type} mode={mode} wide>
-  <main class:list={['panes', mode]}>
+<Base title={title} description={description} image={image} type={type} split={split} wide>
+  <main class:list={['panes', mode, split]}>
     <section class="pane left">
       <slot name="left" />
     </section>
@@ -33,13 +34,13 @@ const { title, description, image, type, mode = 'browse' } = Astro.props;
 <style>
   .panes {
     display: grid;
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
     gap: 1px;
     background: var(--line);
   }
-  .panes.read { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .panes.front { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
 
-  .pane { background: var(--bg); }
+  .pane { background: var(--bg); container-type: inline-size; }
 
 
   @media (min-width: 901px) {

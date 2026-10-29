@@ -2,12 +2,12 @@
 // The header is a ruled row split the same way as the panes under it, so each
 // column carries its own small caption, like a table head.
 interface Props {
-  mode?: 'browse' | 'read';
+  split?: 'front' | 'feed';
 }
-const { mode = 'browse' } = Astro.props;
+const { split = 'feed' } = Astro.props;
 ---
 
-<header class:list={['header', mode]}>
+<header class:list={['header', split]}>
   <div class="cell">
     <a href="/" class="brand">
       <span class="dot"></span>
@@ -24,12 +24,12 @@ const { mode = 'browse' } = Astro.props;
 <style>
   .header {
     display: grid;
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
     gap: 1px;
     background: var(--line);
     border-bottom: 1px solid var(--line);
   }
-  .header.read { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .header.front { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
 
   .cell {
     background: var(--bg);
