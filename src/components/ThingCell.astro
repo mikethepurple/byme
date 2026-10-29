@@ -80,6 +80,10 @@ const n = String(index).padStart(2, '0');
 
   .pic :global(img) { width: 100%; height: auto; display: block; }
 
+  @container pane (max-width: 640px) {
+    .pic { position: static; width: 45%; margin-top: 0.75rem; }
+  }
+
   @media (max-width: 900px) {
     .pic { position: static; width: 45%; margin-top: 0.75rem; }
   }
