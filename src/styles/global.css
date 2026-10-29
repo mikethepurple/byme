@@ -46,6 +46,22 @@
   --line:   #262626;
 }
 
+/* View transitions: one easing and one duration for everything that moves,
+   a quick cross-fade for the rest. */
+::view-transition-group(*) {
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+::view-transition-old(root), ::view-transition-new(root) {
+  animation-duration: 180ms;
+}
+::view-transition-old(feed), ::view-transition-new(feed) {
+  animation-duration: 180ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
+
 *, *::before, *::after { box-sizing: border-box; }
 
 html, body {
