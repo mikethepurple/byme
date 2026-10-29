@@ -63,7 +63,7 @@ const { title, description, image, type, mode = 'browse', split = 'feed' } = Ast
   }
 
   @media (max-width: 900px) {
-    .panes { grid-template-columns: minmax(0, 1fr); border-bottom: 1px solid var(--line); }
+    .panes, .panes.front { grid-template-columns: minmax(0, 1fr); border-bottom: 1px solid var(--line); }
     .panes.read .right { order: -1; }
   }
 </style>

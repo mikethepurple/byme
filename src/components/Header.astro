@@ -69,7 +69,7 @@ const { split = 'feed' } = Astro.props;
   .rss:hover { color: var(--ink); }
 
   @media (max-width: 900px) {
-    .header { grid-template-columns: minmax(0, 1fr); }
+    .header, .header.front { grid-template-columns: minmax(0, 1fr); }
     .cell.right { display: none; }
     .cell .cap { display: none; }
   }
