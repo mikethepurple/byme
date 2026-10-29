@@ -3,7 +3,7 @@
 // then the feed. When a post is open it sits above with its facts (a ruled
 // key/value table); the feed of its scope continues below.
 import Block from './Block.astro';
-import type { Post, Lane } from '../lib/load';
+import type { Post } from '../lib/load';
 
 export interface Row {
   key: string;
@@ -13,11 +13,7 @@ export interface Row {
 }
 
 interface Props {
-  label: string; // "everything", "Ada", "October 2026", "more in Ada"
-  root?: string; // when narrowed: where "everything" goes
-  base?: string; // where the tabs live: '' (everything), '/ada', '/2026-10'
-  allHref?: string; // where the "all" tab goes when there is no base
-  lane?: Lane;
+  label?: string; // a plain row above the feed, e.g. "more in Ada" under an open post
   posts: Post[];
   things: Map<string, string>;
   older?: string;
@@ -25,13 +21,7 @@ interface Props {
   rows?: Row[];
 }
 
-const { label, root, base = '', allHref = '/everything', lane, posts, things, older, newer, rows = [] } = Astro.props;
-const tabs: { id: Lane | 'all'; href: string }[] = [
-  { id: 'all', href: base || allHref },
-  { id: 'photos', href: `${base}/photos` },
-  { id: 'longreads', href: `${base}/longreads` },
-  { id: 'notes', href: `${base}/notes` },
-];
+const { label, posts, things, older, newer, rows = [] } = Astro.props;
 ---
 
 {
@@ -62,26 +52,7 @@ const tabs: { id: Lane | 'all'; href: string }[] = [
 
 <slot />
 
-<div class="scope small">
-  <span class="what">
-    {root ? (
-      <>
-        <a href={root}>everything</a>
-        <span class="sep"> › </span>
-        {label}
-      </>
-    ) : (
-      label
-    )}
-  </span>
-  <nav class="tabs">
-    {tabs.map((t) => (
-      <a href={t.href} class:list={[{ on: t.id === 'all' ? !lane : t.id === lane }]}>
-        {t.id}
-      </a>
-    ))}
-  </nav>
-</div>
+{label && <div class="scope small">{label}</div>}
 
 {posts.length === 0 && <p class="empty small">Nothing here yet.</p>}
 {posts.map((p) => <Block post={p} things={things} />)}
@@ -111,21 +82,10 @@ const tabs: { id: Lane | 'all'; href: string }[] = [
   .sep { color: var(--ink-3); }
 
   .scope {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 1rem;
-    flex-wrap: wrap;
     padding: 14px var(--page-pad) 12px;
     border-bottom: 1px solid var(--line);
+    color: var(--ink-2);
   }
-  .what { color: var(--ink); }
-  .what a { color: var(--ink-2); text-decoration: none; }
-  .what a:hover { color: var(--ink); text-decoration: underline; }
-  .tabs { display: flex; gap: 1rem; }
-  .tabs a { color: var(--ink-2); text-decoration: none; }
-  .tabs a.on, .tabs a:hover { color: var(--ink); }
-  .tabs a.on { color: var(--accent); }
 
   .empty { padding: 2rem var(--page-pad); }
 

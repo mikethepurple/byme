@@ -138,9 +138,21 @@ if (props.type === 'browse') {
 const base = scope.thing ? `/${scope.thing}` : scope.month ? `/${scope.month}` : '';
 ---
 
-<TwoPane title={title} description={description} image={image} type={props.type === 'read' ? 'article' : 'website'} mode={props.type === 'read' ? 'read' : 'browse'}>
+<TwoPane
+  title={title}
+  description={description}
+  image={image}
+  type={props.type === 'read' ? 'article' : 'website'}
+  mode={props.type === 'read' ? 'read' : 'browse'}
+  feed={{
+    label: props.type === 'read' ? (scope.thing ? (names.get(scope.thing) ?? scope.thing) : 'everything') : label,
+    root: (props.type === 'read' ? !!scope.thing : label !== 'everything') ? '/everything' : undefined,
+    base,
+    lane: scope.lane,
+  }}
+>
   <Index slot="left" things={things} posts={posts} thing={scope.thing} month={scope.month} compact />
-  <Column slot="right" label={label} root={label === 'everything' ? undefined : '/everything'} base={base} lane={scope.lane} posts={feed} things={names} older={older} newer={newer} rows={rows}>
+  <Column slot="right" label={props.type === 'read' ? label : undefined} posts={feed} things={names} older={older} newer={newer} rows={rows}>
     {
       props.type === 'read' && (
         <article class="open" transition:name={`post-${props.post.id}`}>

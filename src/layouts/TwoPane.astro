@@ -13,12 +13,13 @@ interface Props {
   type?: 'website' | 'article';
   mode?: 'browse' | 'read';
   split?: 'front' | 'feed'; // front: menu 2/3, feed 1/3; feed: menu 1/3, feed 2/3
+  feed?: { label?: string; root?: string; base?: string; allHref?: string; lane?: any }; // the header's menu stripe
 }
 
-const { title, description, image, type, mode = 'browse', split = 'feed' } = Astro.props;
+const { title, description, image, type, mode = 'browse', split = 'feed', feed = {} } = Astro.props;
 ---
 
-<Base title={title} description={description} image={image} type={type} split={split} wide>
+<Base title={title} description={description} image={image} type={type} split={split} feed={feed} wide>
   <main class:list={['panes', mode, split]}>
     <section class="pane left">
       <slot name="left" />

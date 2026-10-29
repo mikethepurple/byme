@@ -11,13 +11,10 @@ const posts = await loadPosts();
 const names = thingNames(things);
 ---
 
-<TwoPane title="by.erikov.me" split="front">
+<TwoPane title="by.erikov.me" split="front" feed={{ label: 'everything', base: '', allHref: '/' }}>
   <Index slot="left" things={things} posts={posts} />
   <Column
     slot="right"
-    label="everything"
-    base=""
-    allHref="/"
     posts={posts.slice(0, PAGE_SIZE)}
     things={names}
     older={posts.length > PAGE_SIZE ? '/page/2' : undefined}
