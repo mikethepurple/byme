@@ -2,18 +2,27 @@
 ---
 
 <footer class="footer small">
-  <span>Misha Erikov</span>
-  <a href="/rss.xml">rss</a>
+  <div class="row">
+    <span>Misha Erikov</span>
+    <span class="links">
+      <a href="/">projects</a>
+      <a href="/stream">stream</a>
+      <a href="/rss.xml">rss</a>
+    </span>
+  </div>
 </footer>
 
 <style>
   .footer {
-    display: flex;
-    gap: 1.25rem;
-    padding: 3rem 0 2rem;
     border-top: 1px solid var(--line);
     margin-top: 3rem;
   }
+  .row {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px var(--page-pad) 2rem;
+  }
+  .links { display: flex; gap: 1.5rem; }
   .footer a { color: var(--ink-2); text-decoration: none; }
   .footer a:hover { color: var(--ink); }
 </style>

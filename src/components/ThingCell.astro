@@ -1,0 +1,84 @@
+---
+// One cell of the front grid: the number and name do the work; the picture is
+// small and uncropped, parked in the corner. No picture is a fine cell too.
+import { Image } from 'astro:assets';
+import type { Thing } from '../lib/load';
+
+interface Props {
+  thing: Thing;
+  index: number;
+}
+
+const { thing, index } = Astro.props;
+const n = String(index).padStart(2, '0');
+---
+
+<a href={`/${thing.id}`} class="cell">
+  <div class="head">
+    <span class="n small">{n}</span>
+    <span class="name">{thing.data.name}</span>
+  </div>
+  <p class="line small">{thing.data.line}</p>
+  {
+    thing.data.cover && (
+      <div class="pic">
+        <Image src={thing.data.cover} alt={thing.data.name} widths={[320, 640]} sizes="(max-width: 900px) 45vw, 24vw" />
+      </div>
+    )
+  }
+</a>
+
+<style>
+  .cell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: var(--bg);
+    color: var(--ink);
+    text-decoration: none;
+    padding: 20px var(--page-pad) 20px;
+    min-height: 44vh;
+  }
+
+  .cell:hover .name { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 6px; }
+
+  .head {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+  }
+
+  .n { color: var(--ink-3); }
+
+  .name {
+    font-size: clamp(2rem, 4.5vw, 4rem);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .line {
+    max-width: 32ch;
+    margin: 0;
+  }
+
+  .pic {
+    position: absolute;
+    right: var(--page-pad);
+    bottom: 20px;
+    width: 36%;
+    max-width: 320px;
+  }
+
+  .pic :global(img) {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  @media (max-width: 900px) {
+    .cell { min-height: 0; padding-bottom: 20px; }
+    .pic { position: static; width: 45%; margin-top: 0.75rem; }
+  }
+</style>

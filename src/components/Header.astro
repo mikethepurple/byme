@@ -1,23 +1,35 @@
 ---
+// One ruled row on every page: the name, and the three places to go.
+interface Props {
+  section?: 'projects' | 'stream';
+}
+const { section } = Astro.props;
 ---
 
 <header class="header">
-  <a href="/" class="brand">
-    <span class="dot"></span>
-    <span class="name">by.erikov.me</span>
-  </a>
-  <nav class="nav small">
-    <a href="/stream">stream</a>
-    <a href="/rss.xml">rss</a>
-  </nav>
+  <div class="row">
+    <a href="/" class="brand">
+      <span class="dot"></span>
+      <span class="name">by.erikov.me</span>
+    </a>
+    <nav class="nav small">
+      <a href="/" class:list={[{ on: section === 'projects' }]}>projects</a>
+      <a href="/stream" class:list={[{ on: section === 'stream' }]}>stream</a>
+      <a href="/rss.xml">rss</a>
+    </nav>
+  </div>
 </header>
 
 <style>
   .header {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1.5rem 0 2rem;
+    padding: 14px var(--page-pad);
   }
 
   .brand {
@@ -41,7 +53,13 @@
     font-weight: 500;
   }
 
-  .nav { display: flex; gap: 1.25rem; }
-  .nav a { text-decoration: none; color: var(--ink-2); }
+  .nav { display: flex; gap: 1.5rem; }
+  .nav a {
+    text-decoration: none;
+    color: var(--ink-2);
+    padding-bottom: 2px;
+    border-bottom: 1px solid transparent;
+  }
   .nav a:hover { color: var(--ink); }
+  .nav a.on { color: var(--ink); border-bottom-color: var(--ink); }
 </style>

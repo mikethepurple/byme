@@ -1,48 +1,81 @@
 ---
 import Base from '../layouts/Base.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import ThingTile from '../components/ThingTile.astro';
-import Stream from '../components/Stream.astro';
-import { loadPosts, loadThings, thingNames, PAGE_SIZE } from '../lib/load';
+import ThingCell from '../components/ThingCell.astro';
+import { loadPosts, loadThings, firstLine } from '../lib/load';
+import { formatShort } from '../lib/posts';
 
 export const prerender = true;
 
 const things = await loadThings();
 const posts = await loadPosts();
-const names = thingNames(things);
+const latest = posts[0];
 ---
 
-<Base title="by.erikov.me">
-  <Header />
+<Base title="by.erikov.me" section="projects" wide>
+  <main class="grid">
+    {things.map((t, i) => <ThingCell thing={t} index={i + 1} />)}
 
-  <main class="front">
-    <section class="things">
-      {things.map((t) => <ThingTile thing={t} />)}
-    </section>
-
-    <Stream posts={posts.slice(0, PAGE_SIZE)} things={names} lane="all" older={posts.length > PAGE_SIZE ? '/stream/2' : undefined} />
+    <a href="/stream" class="cell stream">
+      <div class="head">
+        <span class="n small">{String(things.length + 1).padStart(2, '0')}</span>
+        <span class="name">Stream</span>
+      </div>
+      <p class="line small">Everything I drop, in time order.</p>
+      {
+        latest && (
+          <p class="latest">
+            <span class="small meta">{formatShort(latest.data.date)} · {latest.kind}</span>
+            <span class="first">{latest.data.title || firstLine(latest.text, 90) || `a ${latest.kind}`}</span>
+          </p>
+        )
+      }
+    </a>
   </main>
-
-  <Footer />
 </Base>
 
 <style>
-  .front {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, var(--col));
-    gap: 48px;
-    align-items: start;
-  }
-
-  .things {
+  .grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 24px;
+    gap: 1px;
+    background: var(--line);
+    border-bottom: 1px solid var(--line);
   }
 
+  .cell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: var(--bg);
+    color: var(--ink);
+    text-decoration: none;
+    padding: 20px var(--page-pad);
+    min-height: 44vh;
+  }
+  .cell:hover .name { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 6px; }
+  .head { display: flex; align-items: baseline; gap: 1rem; }
+  .n { color: var(--ink-3); }
+  .name {
+    font-size: clamp(2rem, 4.5vw, 4rem);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .line { max-width: 32ch; margin: 0; }
+
+  .latest {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    max-width: 40ch;
+  }
+  .first { font-size: 1.05rem; }
+
   @media (max-width: 900px) {
-    .front { grid-template-columns: minmax(0, 1fr); gap: 40px; }
-    .things { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .grid { grid-template-columns: minmax(0, 1fr); }
+    .cell { min-height: 0; }
+    .latest { margin-top: 0.75rem; }
   }
 </style>

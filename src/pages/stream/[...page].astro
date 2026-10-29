@@ -1,8 +1,6 @@
 ---
 import type { GetStaticPaths } from 'astro';
 import Base from '../../layouts/Base.astro';
-import Header from '../../components/Header.astro';
-import Footer from '../../components/Footer.astro';
 import Stream from '../../components/Stream.astro';
 import { loadPosts, loadThings, thingNames, PAGE_SIZE } from '../../lib/load';
 
@@ -18,10 +16,12 @@ const things = await loadThings();
 const names = thingNames(things);
 ---
 
-<Base title={page.currentPage > 1 ? `Stream, page ${page.currentPage}` : 'Stream'}>
-  <Header />
-  <main>
+<Base title={page.currentPage > 1 ? `Stream, page ${page.currentPage}` : 'Stream'} section="stream">
+  <main class="main">
     <Stream posts={page.data} things={names} lane="all" older={page.url.next} newer={page.url.prev} />
   </main>
-  <Footer />
 </Base>
+
+<style>
+  .main { padding-top: 1.5rem; }
+</style>
