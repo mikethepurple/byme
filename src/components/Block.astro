@@ -1,24 +1,26 @@
 ---
 import { Image } from 'astro:assets';
 import { render } from 'astro:content';
-import { formatShort } from '../lib/posts';
+import { formatShort, laneOf } from '../lib/posts';
 import type { Post } from '../lib/load';
 
 interface Props {
   post: Post;
   things: Map<string, string>; // thing id → name
+  current?: boolean; // the post open on the left
 }
 
-const { post, things } = Astro.props;
+const { post, things, current = false } = Astro.props;
 const { Content } = await render(post);
 const href = `/${post.id}`;
 const imgs = post.data.images;
 const kind = post.kind;
 const hasText = post.text.length > 0;
 const link = post.data.link || '';
+const month = post.data.date.slice(0, 7);
 ---
 
-<article class={`block kind-${kind}`}>
+<article class:list={['block', `kind-${kind}`, { on: current }]} data-lane={laneOf(kind)} data-month={month}>
   {
     imgs.length === 1 && (
       <a href={href} class="media">
@@ -26,7 +28,7 @@ const link = post.data.link || '';
           src={imgs[0]}
           alt={post.data.title || ''}
           widths={[480, 960, 1440]}
-          sizes="(max-width: 900px) 100vw, 560px"
+          sizes="(max-width: 900px) 100vw, 33vw"
           loading="lazy"
         />
       </a>
@@ -36,7 +38,7 @@ const link = post.data.link || '';
     imgs.length > 1 && (
       <a href={href} class="media set">
         {imgs.slice(0, 4).map((img) => (
-          <Image src={img} alt="" widths={[320, 640]} sizes="280px" loading="lazy" />
+          <Image src={img} alt="" widths={[320, 640]} sizes="(max-width: 900px) 50vw, 16vw" loading="lazy" />
         ))}
         {imgs.length > 4 && <span class="count small">+{imgs.length - 4}</span>}
       </a>
@@ -65,6 +67,8 @@ const link = post.data.link || '';
     border-bottom: 1px solid var(--line);
     padding: 20px 0 18px;
   }
+
+  .block.on .meta time { color: var(--accent); }
 
   .media { display: block; margin: 0 0 14px; }
   .media :global(img) { width: 100%; }

@@ -1,0 +1,63 @@
+---
+// Every page: what you are looking at on the left, the right column beside it.
+// On desktop both panes are the full height of the window and scroll on their
+// own with no visible scrollbar; narrow screens stack them into one page.
+import Base from './Base.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  image?: string;
+  type?: 'website' | 'article';
+  section?: 'projects' | 'stream';
+}
+
+const { title, description, image, type, section } = Astro.props;
+---
+
+<Base title={title} description={description} image={image} type={type} section={section} wide>
+  <main class="panes">
+    <section class="pane left">
+      <slot name="left" />
+    </section>
+    <aside class="pane right">
+      <slot name="right" />
+    </aside>
+  </main>
+</Base>
+
+<style>
+  .panes {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 1px;
+    background: var(--line);
+  }
+
+  .pane { background: var(--bg); }
+
+  .right { padding: 0 var(--page-pad) 2rem; }
+
+  @media (min-width: 901px) {
+    :global(html), :global(body.app) { height: 100%; }
+    :global(body.app) {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      overflow: hidden;
+    }
+    :global(body.app > header) { flex: none; }
+    .panes { flex: 1 1 auto; min-height: 0; }
+    .pane {
+      height: 100%;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: none;
+    }
+    .pane::-webkit-scrollbar { display: none; }
+  }
+
+  @media (max-width: 900px) {
+    .panes { grid-template-columns: minmax(0, 1fr); border-bottom: 1px solid var(--line); }
+  }
+</style>

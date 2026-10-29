@@ -1,0 +1,104 @@
+---
+// The left side of the stream pages: an index, not a page. Months, projects,
+// kinds, as plain ruled lists. No counts. Month and kind links filter the feed
+// on the right in place; project links open the project.
+import type { Post, Thing, Lane } from '../lib/load';
+
+interface Props {
+  posts: Post[];
+  things: Thing[];
+  lane?: Lane | 'all';
+}
+
+const { posts, things, lane = 'all' } = Astro.props;
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const months = Array.from(new Set(posts.map((p) => p.data.date.slice(0, 7)))).sort().reverse();
+const years = Array.from(new Set(months.map((m) => m.slice(0, 4))));
+const kinds: { id: Lane | 'all'; label: string; href: string }[] = [
+  { id: 'all', label: 'everything', href: '/stream' },
+  { id: 'photos', label: 'photos and sets', href: '/photos' },
+  { id: 'longreads', label: 'longreads', href: '/longreads' },
+  { id: 'notes', label: 'notes and links', href: '/notes' },
+];
+---
+
+<div class="archive">
+  <h1 class="title">Stream</h1>
+
+  <section class="list">
+    <h2 class="label small">When</h2>
+    {years.map((y) => (
+      <div class="year">
+        <span class="y">{y}</span>
+        <span class="months">
+          {months
+            .filter((m) => m.startsWith(y))
+            .map((m) => (
+              <a href={`/stream#${m}`} data-month={m}>{MONTHS[+m.slice(5, 7) - 1]}</a>
+            ))}
+        </span>
+      </div>
+    ))}
+  </section>
+
+  <section class="list">
+    <h2 class="label small">Projects</h2>
+    {things.map((t) => (
+      <a class="line" href={`/${t.id}`}>
+        <span>{t.data.name}</span>
+        <span class="small dim">{t.data.line}</span>
+      </a>
+    ))}
+  </section>
+
+  <section class="list">
+    <h2 class="label small">Kinds</h2>
+    {kinds.map((k) => (
+      <a class:list={['line', { on: k.id === lane }]} href={k.href}>
+        <span>{k.label}</span>
+      </a>
+    ))}
+  </section>
+</div>
+
+<style>
+  .archive { padding: 20px var(--page-pad) 2rem; max-width: var(--read); }
+
+  .title {
+    font-size: clamp(2.5rem, 7vw, 6rem);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
+    margin: 0.5rem 0 2rem;
+  }
+
+  .list { margin-bottom: 2rem; }
+  .label { font-weight: 400; color: var(--ink-3); margin: 0; padding: 0 0 8px; border-bottom: 1px solid var(--line); }
+
+  .year {
+    display: grid;
+    grid-template-columns: 5rem minmax(0, 1fr);
+    gap: 1rem;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .y { color: var(--ink-2); }
+  .months { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; }
+  .months a { text-decoration: none; color: var(--ink); }
+  .months a.on { color: var(--accent); }
+  .months a:hover { text-decoration: underline; }
+
+  .line {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    gap: 1rem;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .line:hover span:first-child { text-decoration: underline; }
+  .line.on span:first-child { color: var(--accent); }
+  .dim { color: var(--ink-2); }
+</style>

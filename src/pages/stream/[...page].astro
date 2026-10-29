@@ -1,7 +1,8 @@
 ---
 import type { GetStaticPaths } from 'astro';
-import Base from '../../layouts/Base.astro';
-import Stream from '../../components/Stream.astro';
+import TwoPane from '../../layouts/TwoPane.astro';
+import Archive from '../../components/Archive.astro';
+import Side from '../../components/Side.astro';
 import { loadPosts, loadThings, thingNames, PAGE_SIZE } from '../../lib/load';
 
 export const prerender = true;
@@ -13,15 +14,11 @@ export const getStaticPaths = (async ({ paginate }) => {
 
 const { page } = Astro.props;
 const things = await loadThings();
+const posts = await loadPosts();
 const names = thingNames(things);
 ---
 
-<Base title={page.currentPage > 1 ? `Stream, page ${page.currentPage}` : 'Stream'} section="stream">
-  <main class="main">
-    <Stream posts={page.data} things={names} lane="all" older={page.url.next} newer={page.url.prev} />
-  </main>
-</Base>
-
-<style>
-  .main { padding-top: 1.5rem; }
-</style>
+<TwoPane title={page.currentPage > 1 ? `Stream, page ${page.currentPage}` : 'Stream'} section="stream">
+  <Archive slot="left" posts={posts} things={things} lane="all" />
+  <Side slot="right" posts={page.data} things={names} lane="all" older={page.url.next} newer={page.url.prev} />
+</TwoPane>

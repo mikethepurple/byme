@@ -17,6 +17,35 @@
   --read: 680px;  /* a post, read in full */
 }
 
+/* Light: paper, not white. Follows the system; `?theme=light|dark` on any URL
+   sets data-theme for looking at either one. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --bg:     #f2f1ee;
+    --ink:    #141414;
+    --ink-2:  #5a5955;
+    --ink-3:  #8f8d88;
+    --line:   #d8d6d1;
+  }
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg:     #f2f1ee;
+  --ink:    #141414;
+  --ink-2:  #5a5955;
+  --ink-3:  #8f8d88;
+  --line:   #d8d6d1;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg:     #0e0e0e;
+  --ink:    #ededed;
+  --ink-2:  #9a9a9a;
+  --ink-3:  #5c5c5c;
+  --line:   #262626;
+}
+
 *, *::before, *::after { box-sizing: border-box; }
 
 html, body {
@@ -71,12 +100,12 @@ a:hover { text-decoration-color: var(--accent); }
 code {
   font-family: var(--font-mono);
   font-size: 0.9em;
-  background: #1a1a1a;
+  background: color-mix(in srgb, var(--ink) 7%, var(--bg));
   padding: 0.1em 0.35em;
 }
 
 pre {
-  background: #1a1a1a;
+  background: color-mix(in srgb, var(--ink) 7%, var(--bg));
   border: 1px solid var(--line);
   padding: 1rem;
   overflow-x: auto;

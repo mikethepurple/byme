@@ -29,7 +29,19 @@ const ogImage = image ? new URL(image, Astro.site ?? Astro.url).href : undefined
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#0e0e0e" />
+  <meta name="theme-color" content="#0e0e0e" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#f2f1ee" media="(prefers-color-scheme: light)" />
+  <script is:inline>
+    // ?theme=light|dark pins a theme for this visit (to look at either one).
+    (function () {
+      try {
+        var q = new URLSearchParams(location.search).get('theme');
+        if (q === 'light' || q === 'dark') sessionStorage.setItem('theme', q);
+        var t = sessionStorage.getItem('theme');
+        if (t) document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    })();
+  </script>
   <title>{fullTitle}</title>
   <meta name="description" content={description} />
 

@@ -1,10 +1,23 @@
 ---
 import { Image } from 'astro:assets';
 import { render } from 'astro:content';
-import Base from '../layouts/Base.astro';
-import Stream from '../components/Stream.astro';
-import { formatDate } from '../lib/posts';
-import { loadPosts, loadThings, thingNames, postsOf, postsIn, firstLine, LANES, type Post, type Thing, type Lane } from '../lib/load';
+import TwoPane from '../layouts/TwoPane.astro';
+import Archive from '../components/Archive.astro';
+import Side from '../components/Side.astro';
+import { formatDate, wallParts } from '../lib/posts';
+import {
+  loadPosts,
+  loadThings,
+  thingNames,
+  postsOf,
+  postsIn,
+  firstLine,
+  LANES,
+  PAGE_SIZE,
+  type Post,
+  type Thing,
+  type Lane,
+} from '../lib/load';
 
 export const prerender = true;
 
@@ -53,107 +66,133 @@ if (props.type === 'lane') {
   image = p.data.images[0]?.src;
   Content = (await render(p)).Content;
 }
+
+// The right column of a post: its facts, then its siblings in the same projects.
+function postRows(p: Post, prev?: Post, next?: Post) {
+  const offset = p.data.date.match(/(Z|[+-]\d\d:?\d\d)$/)?.[1];
+  const w = wallParts(p.data.date);
+  const rows = [
+    { key: 'posted', value: `${formatDate(p.data.date)}${offset ? ` (${offset === 'Z' ? 'UTC' : 'UTC' + offset})` : ''}` },
+    { key: 'kind', value: p.kind, href: `/${p.kind === 'photo' || p.kind === 'set' ? 'photos' : p.kind === 'longread' ? 'longreads' : 'notes'}` },
+  ];
+  if (p.data.things.length > 0) {
+    rows.push({ key: 'projects', value: '', links: p.data.things.map((t) => ({ label: names.get(t.id) ?? t.id, href: `/${t.id}` })) } as any);
+  }
+  if (p.data.images.length > 0) {
+    rows.push({
+      key: p.data.images.length === 1 ? 'original' : 'originals',
+      value: '',
+      links: p.data.images.map((img, i) => ({ label: `${img.width}×${img.height}${p.data.images.length > 1 ? ` (${i + 1})` : ''}`, href: img.src })),
+    } as any);
+  }
+  if (p.data.link) rows.push({ key: 'link', value: p.data.link.replace(/^https?:\/\//, ''), href: p.data.link });
+  const around = [] as { label: string; href: string }[];
+  if (prev) around.push({ label: 'newer', href: `/${prev.id}` });
+  if (next) around.push({ label: 'older', href: `/${next.id}` });
+  if (around.length) rows.push({ key: 'around', value: '', links: around } as any);
+  rows.push({ key: 'address', value: `by.erikov.me/${p.id}`, href: `/${p.id}` });
+  void w;
+  return rows;
+}
+
+function siblings(p: Post): Post[] {
+  const ids = new Set(p.data.things.map((t) => t.id));
+  if (ids.size === 0) return [];
+  return posts.filter((x) => x.id !== p.id && x.data.things.some((t) => ids.has(t.id))).slice(0, 6);
+}
 ---
 
-<Base title={title} description={description} image={image} type={props.type === 'post' ? 'article' : 'website'} section={props.type === 'thing' ? 'projects' : 'stream'}>
+{
+  props.type === 'lane' && (
+    <TwoPane title={title} section="stream">
+      <Archive slot="left" posts={posts} things={things} lane={props.lane} />
+      <Side slot="right" posts={postsIn(posts, props.lane).slice(0, PAGE_SIZE)} things={names} lane={props.lane} />
+    </TwoPane>
+  )
+}
 
-  {
-    props.type === 'lane' && (
-      <main class="main">
-        <Stream posts={postsIn(posts, props.lane)} things={names} lane={props.lane} />
-      </main>
-    )
-  }
-
-  {
-    props.type === 'thing' && (
-      <main class="thing main">
-        <header class="thing-head">
-          <h1>{props.thing.data.name}</h1>
-          {props.thing.data.line && <p class="line">{props.thing.data.line}</p>}
-          {props.thing.data.try.length > 0 && (
-            <p class="try">
-              {props.thing.data.try.map((t) => (
-                <a href={t.url}>{t.label}</a>
-              ))}
-            </p>
-          )}
-        </header>
+{
+  props.type === 'thing' && (
+    <TwoPane title={title} description={description} image={image} section="projects">
+      <div slot="left" class="read thing">
+        <h1>{props.thing.data.name}</h1>
+        {props.thing.data.line && <p class="line">{props.thing.data.line}</p>}
         {props.thing.data.screenshots.length > 0 && (
           <div class="shots">
             {props.thing.data.screenshots.map((s) => (
               <a href={s.src}>
-                <Image src={s} alt="" widths={[480, 960]} sizes="(max-width: 900px) 100vw, 480px" />
+                <Image src={s} alt="" widths={[680, 1360]} sizes="(max-width: 900px) 100vw, 60vw" />
               </a>
             ))}
           </div>
         )}
-        <Stream posts={postsOf(posts, props.thing.id)} things={names} />
-      </main>
-    )
-  }
+      </div>
+      <Side
+        slot="right"
+        posts={postsOf(posts, props.thing.id)}
+        things={names}
+        lane="all"
+        rows={props.thing.data.try.map((t) => ({ key: 'try', value: t.label, href: t.url }))}
+      />
+    </TwoPane>
+  )
+}
 
-  {
-    props.type === 'post' && (
-      <main class="post main">
-        <article>
-          {props.post.data.images.map((img) => (
-            <a href={img.src} class="full">
-              <Image src={img} alt={props.post.data.title || ''} widths={[680, 1360, 2040]} sizes="(max-width: 900px) 100vw, 680px" />
-            </a>
-          ))}
-          {props.post.data.title && <h1>{props.post.data.title}</h1>}
-          {props.post.data.link && (
-            <p class="link">
-              <a href={props.post.data.link}>{props.post.data.link.replace(/^https?:\/\//, '').replace(/\/$/, '')}</a>
-            </p>
-          )}
-          {props.post.text && (
-            <div class="body">
-              <Content />
-            </div>
-          )}
-          <footer class="meta">
-            <time datetime={props.post.when.toISOString()}>{formatDate(props.post.data.date)}</time>
-            <span class="kind">{props.post.kind}</span>
-            {props.post.data.things.map((t) => (
-              <a href={`/${t.id}`}>{names.get(t.id) ?? t.id}</a>
-            ))}
-          </footer>
-        </article>
-        <nav class="around small">
-          {props.prev && <a href={`/${props.prev.id}`}>newer</a>}
-          {props.next && <a href={`/${props.next.id}`}>older</a>}
-        </nav>
-      </main>
-    )
-  }
-
-</Base>
+{
+  props.type === 'post' && (
+    <TwoPane title={title} description={description} image={image} type="article" section="stream">
+      <article slot="left" class="read post">
+        {props.post.data.images.map((img) => (
+          <a href={img.src} class="full">
+            <Image src={img} alt={props.post.data.title || ''} widths={[680, 1360, 2040]} sizes="(max-width: 900px) 100vw, 680px" />
+          </a>
+        ))}
+        {props.post.data.title && <h1>{props.post.data.title}</h1>}
+        {props.post.data.link && (
+          <p class="link">
+            <a href={props.post.data.link}>{props.post.data.link.replace(/^https?:\/\//, '').replace(/\/$/, '')}</a>
+          </p>
+        )}
+        {props.post.text && (
+          <div class="body">
+            <Content />
+          </div>
+        )}
+      </article>
+      <Side
+        slot="right"
+        posts={posts.slice(0, PAGE_SIZE)}
+        things={names}
+        lane="all"
+        current={props.post.id}
+        rows={postRows(props.post, props.prev, props.next)}
+        related={{
+          label: `Also in ${props.post.data.things.map((t) => names.get(t.id) ?? t.id).join(', ')}`,
+          posts: siblings(props.post),
+        }}
+      />
+    </TwoPane>
+  )
+}
 
 <style>
-  .main { padding-top: 1.5rem; }
-  .thing-head { margin-bottom: 2rem; }
-  .thing-head h1 { font-size: clamp(2.5rem, 7vw, 6rem); font-weight: 500; letter-spacing: -0.03em; line-height: 0.95; margin: 0.5rem 0 0.75rem; }
-  .line { color: var(--ink-2); margin: 0 0 0.5rem; }
-  .try { display: flex; gap: 1rem; margin: 0; }
+  .read { padding: 20px var(--page-pad) 3rem; max-width: calc(var(--read) + 2 * var(--page-pad)); }
 
-  .shots {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 12px;
-    margin-bottom: 2rem;
+  .thing h1 {
+    font-size: clamp(2.5rem, 7vw, 6rem);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
+    margin: 0.5rem 0 0.75rem;
   }
-  .shots a { display: block; border: 1px solid var(--line); }
+  .line { color: var(--ink-2); margin: 0 0 1.5rem; }
+  .shots { display: grid; gap: 12px; }
+  .shots a { display: block; }
 
-  .post { max-width: var(--read); }
   .post .full { display: block; margin: 0 0 1rem; }
   .post h1 { font-size: 1.5rem; margin: 0.5rem 0 1rem; }
   .post .body { font-size: 1.05rem; line-height: 1.65; }
   .post .body :global(h2) { margin-top: 2rem; }
   .post .body :global(img) { margin: 1rem 0; }
   .post .link { margin: 0 0 1rem; }
-  .post .meta { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
-  .post .kind { color: var(--ink-3); }
-  .around { display: flex; gap: 1rem; margin-top: 2rem; }
 </style>

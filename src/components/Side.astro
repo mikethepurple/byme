@@ -1,0 +1,106 @@
+---
+// The right column: technical info and navigation for what is on the left,
+// then the feed. `rows` is a ruled key/value table; `related` a short text
+// list of sibling posts; both are optional.
+import Stream from './Stream.astro';
+import { formatShort } from '../lib/posts';
+import { firstLine, type Post } from '../lib/load';
+
+interface Row {
+  key: string;
+  value: string;
+  href?: string;
+  links?: { label: string; href: string }[];
+}
+
+interface Props {
+  posts: Post[];
+  things: Map<string, string>;
+  lane?: 'all' | 'photos' | 'longreads' | 'notes';
+  current?: string;
+  older?: string;
+  newer?: string;
+  rows?: Row[];
+  related?: { label: string; posts: Post[] };
+}
+
+const { posts, things, lane, current, older, newer, rows = [], related } = Astro.props;
+---
+
+{
+  rows.length > 0 && (
+    <dl class="rows small">
+      {rows.map((r) => (
+        <div class="row">
+          <dt>{r.key}</dt>
+          <dd>
+            {r.links ? (
+              r.links.map((l, i) => (
+                <>
+                  {i > 0 && <span class="sep"> · </span>}
+                  <a href={l.href}>{l.label}</a>
+                </>
+              ))
+            ) : r.href ? (
+              <a href={r.href}>{r.value}</a>
+            ) : (
+              r.value
+            )}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  )
+}
+
+{
+  related && related.posts.length > 0 && (
+    <section class="related small">
+      <h2 class="label">{related.label}</h2>
+      <ul>
+        {related.posts.map((p) => (
+          <li>
+            <a href={`/${p.id}`}>
+              <span class="when">{formatShort(p.data.date)}</span>
+              <span class="what">{p.data.title || firstLine(p.text, 60) || p.kind}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+<Stream posts={posts} things={things} lane={lane} current={current} older={older} newer={newer} />
+
+<style>
+  .rows { margin: 0; padding: 8px 0 0; }
+  .row {
+    display: grid;
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    gap: 1rem;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  dt { color: var(--ink-3); margin: 0; }
+  dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; }
+  dd a { color: var(--ink); text-decoration: none; }
+  dd a:hover { text-decoration: underline; }
+  .sep { color: var(--ink-3); }
+
+  .related { padding: 14px 0 6px; border-bottom: 1px solid var(--line); }
+  .label { font-size: inherit; font-weight: 400; color: var(--ink-3); margin: 0 0 6px; }
+  .related ul { list-style: none; padding: 0; margin: 0; }
+  .related li { margin: 0; }
+  .related a {
+    display: grid;
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    gap: 1rem;
+    padding: 4px 0;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .related a:hover .what { text-decoration: underline; }
+  .when { color: var(--ink-3); }
+  .what { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+</style>
