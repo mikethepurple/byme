@@ -1,5 +1,8 @@
 // Pure helpers shared by the pages and the publish endpoint.
 // The kind of a post is inferred from what was dropped; it is never stored.
+// A post's date is stored as the wall clock where it was posted, with its
+// offset (`2026-11-03T09:15:00+09:00`); slugs and date lines read it literally,
+// so a post from Tokyo keeps Tokyo time wherever it is read.
 
 export type Kind = 'photo' | 'set' | 'note' | 'longread';
 
@@ -8,7 +11,8 @@ export const KINDS: Kind[] = ['photo', 'set', 'note', 'longread'];
 /** Body length (characters) from which a text-only post reads as a longread. */
 export const LONGREAD_CHARS = 600;
 
-export const ZONE = 'Europe/Paris';
+/** Zone assumed for stored dates that carry no offset (older posts, Keystatic edits). */
+export const HOME_ZONE = 'Europe/Paris';
 
 export function kindOf(p: { images: number; body: string; link?: string }): Kind {
   if (p.images === 1) return 'photo';
@@ -24,12 +28,12 @@ export function laneOf(kind: Kind): 'photos' | 'longreads' | 'notes' {
   return 'notes';
 }
 
-type Parts = Record<'year' | 'month' | 'day' | 'hour' | 'minute' | 'second', string>;
+export type Parts = Record<'year' | 'month' | 'day' | 'hour' | 'minute' | 'second', string>;
 
-/** Calendar parts of an instant as seen in Paris. */
-export function parisParts(date: Date): Parts {
+/** Calendar parts of an instant as seen in a zone. */
+export function partsIn(date: Date, zone: string): Parts {
   const fmt = new Intl.DateTimeFormat('en-GB', {
-    timeZone: ZONE,
+    timeZone: zone,
     hourCycle: 'h23',
     year: 'numeric',
     month: '2-digit',
@@ -47,39 +51,58 @@ export function parisParts(date: Date): Parts {
   return out;
 }
 
-function parisOffsetMinutes(utc: Date): number {
-  const p = parisParts(utc);
+function offsetMinutes(utc: Date, zone: string): number {
+  const p = partsIn(utc, zone);
   const asUtc = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second);
-  return (asUtc - utc.getTime()) / 60000;
+  return Math.round((asUtc - utc.getTime()) / 60000);
 }
 
-/**
- * Stored dates come from Keystatic (`2026-10-29T19:11`, no zone) or from the
- * publish endpoint (full ISO with offset). A string without a zone is Paris time.
- */
-export function parseDate(s: string): Date {
-  if (/(Z|[+-]\d\d:?\d\d)$/.test(s)) return new Date(s);
-  const m = s.match(/^(\d{4})-(\d\d)-(\d\d)(?:[T ](\d\d):(\d\d)(?::(\d\d))?)?$/);
-  if (!m) return new Date(s);
+/** `2026-11-03T09:15:00+09:00`: the wall clock of `date` in `zone`, with the offset. */
+export function toIsoInZone(date: Date, zone: string): string {
+  const p = partsIn(date, zone);
+  const off = offsetMinutes(date, zone);
+  const sign = off < 0 ? '-' : '+';
+  const abs = Math.abs(off);
+  const hh = String(Math.floor(abs / 60)).padStart(2, '0');
+  const mm = String(abs % 60).padStart(2, '0');
+  return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}:${p.second}${sign}${hh}:${mm}`;
+}
+
+const STORED = /^(\d{4})-(\d\d)-(\d\d)(?:[T ](\d\d):(\d\d)(?::(\d\d))?)?(Z|[+-]\d\d:?\d\d)?$/;
+
+/** The wall-clock parts of a stored date string, read literally (Z = UTC wall clock). */
+export function wallParts(stored: string): Parts {
+  const m = stored.match(STORED);
+  if (!m) return partsIn(new Date(stored), HOME_ZONE);
+  const [, year, month, day, hour = '00', minute = '00', second = '00', zone] = m;
+  if (zone === 'Z') return partsIn(new Date(stored), 'UTC');
+  return { year, month, day, hour, minute, second };
+}
+
+/** The instant a stored date names; a string without a zone is taken as HOME_ZONE. */
+export function parseDate(stored: string): Date {
+  const m = stored.match(STORED);
+  if (!m) return new Date(stored);
+  if (m[7]) return new Date(stored);
   const [, y, mo, d, h = '0', mi = '0', sec = '0'] = m;
   const guess = Date.UTC(+y, +mo - 1, +d, +h, +mi, +sec);
-  const off1 = parisOffsetMinutes(new Date(guess));
+  const off1 = offsetMinutes(new Date(guess), HOME_ZONE);
   let utc = guess - off1 * 60000;
-  const off2 = parisOffsetMinutes(new Date(utc));
+  const off2 = offsetMinutes(new Date(utc), HOME_ZONE);
   if (off2 !== off1) utc = guess - off2 * 60000;
   return new Date(utc);
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-/** `29 Oct 2026, 19:11` in Paris time. */
-export function formatDate(date: Date): string {
-  const p = parisParts(date);
+/** `29 Oct 2026, 19:11` — as posted. */
+export function formatDate(stored: string): string {
+  const p = wallParts(stored);
   return `${+p.day} ${MONTHS[+p.month - 1]} ${p.year}, ${p.hour}:${p.minute}`;
 }
 
 /** `29 Oct, 19:11` for the block line. */
-export function formatShort(date: Date): string {
-  const p = parisParts(date);
+export function formatShort(stored: string): string {
+  const p = wallParts(stored);
   return `${+p.day} ${MONTHS[+p.month - 1]}, ${p.hour}:${p.minute}`;
 }

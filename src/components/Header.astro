@@ -6,11 +6,18 @@
     <span class="dot"></span>
     <span class="name">by.erikov.me</span>
   </a>
+  <nav class="nav small">
+    <a href="/stream">stream</a>
+    <a href="/rss.xml">rss</a>
+  </nav>
 </header>
 
 <style>
   .header {
-    padding: 3rem 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem 0 2rem;
   }
 
   .brand {
@@ -32,6 +39,9 @@
   .name {
     font-size: 0.95rem;
     font-weight: 500;
-    letter-spacing: -0.01em;
   }
+
+  .nav { display: flex; gap: 1.25rem; }
+  .nav a { text-decoration: none; color: var(--ink-2); }
+  .nav a:hover { color: var(--ink); }
 </style>

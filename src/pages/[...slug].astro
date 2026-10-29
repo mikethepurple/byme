@@ -1,97 +1,162 @@
 ---
-import { getCollection, render } from 'astro:content';
+import { Image } from 'astro:assets';
+import { render } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import Stream from '../components/Stream.astro';
+import { formatDate } from '../lib/posts';
+import { loadPosts, loadThings, thingNames, postsOf, postsIn, firstLine, LANES, type Post, type Thing, type Lane } from '../lib/load';
 
 export const prerender = true;
 
-export async function getStaticPaths() {
-  const posts = await getCollection('posts');
+type Props =
+  | { type: 'lane'; lane: Lane }
+  | { type: 'thing'; thing: Thing }
+  | { type: 'post'; post: Post; prev?: Post; next?: Post };
 
-  return posts
-    .filter((p) => !p.data.draft)
-    .map((post) => ({
-      params: { slug: post.id },
-      props: { post },
-    }));
+export async function getStaticPaths() {
+  const things = await loadThings();
+  const posts = await loadPosts();
+  const paths: { params: { slug: string }; props: Props }[] = [];
+
+  for (const lane of LANES) paths.push({ params: { slug: lane }, props: { type: 'lane', lane } });
+  for (const thing of things) {
+    if ((LANES as readonly string[]).includes(thing.id)) throw new Error(`Thing slug "${thing.id}" is reserved for a lane`);
+    paths.push({ params: { slug: thing.id }, props: { type: 'thing', thing } });
+  }
+  posts.forEach((post, i) => {
+    // posts are newest first: prev = newer, next = older
+    paths.push({ params: { slug: post.id }, props: { type: 'post', post, prev: posts[i - 1], next: posts[i + 1] } });
+  });
+  return paths;
 }
 
-const { post } = Astro.props;
-const { Content } = await render(post);
+const props = Astro.props as Props;
+const things = await loadThings();
+const posts = await loadPosts();
+const names = thingNames(things);
 
-const formatted = new Date(post.data.date + 'T00:00:00').toLocaleDateString('en-US', {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-});
+let title = '';
+let description: string | undefined;
+let image: string | undefined;
+let Content: any = null;
+
+if (props.type === 'lane') {
+  title = props.lane;
+} else if (props.type === 'thing') {
+  title = props.thing.data.name;
+  description = props.thing.data.line || undefined;
+  image = props.thing.data.cover?.src;
+} else {
+  const p = props.post;
+  title = p.data.title || firstLine(p.text) || `${p.kind} · ${formatDate(p.data.date)}`;
+  description = p.text ? firstLine(p.text, 160) : undefined;
+  image = p.data.images[0]?.src;
+  Content = (await render(p)).Content;
+}
 ---
 
-<Base title={post.data.title} description={post.data.description}>
+<Base title={title} description={description} image={image} type={props.type === 'post' ? 'article' : 'website'}>
   <Header />
 
-  <article>
-    <header class="post-header">
-      <div class="post-meta">
-        <time datetime={post.data.date}>{formatted}</time>
-      </div>
-      <h1>{post.data.title}</h1>
-    </header>
+  {
+    props.type === 'lane' && (
+      <main>
+        <Stream posts={postsIn(posts, props.lane)} things={names} lane={props.lane} />
+      </main>
+    )
+  }
 
-    <div class="post-body">
-      <Content />
-    </div>
-  </article>
+  {
+    props.type === 'thing' && (
+      <main class="thing">
+        <header class="thing-head">
+          <h1>{props.thing.data.name}</h1>
+          {props.thing.data.line && <p class="line">{props.thing.data.line}</p>}
+          {props.thing.data.try.length > 0 && (
+            <p class="try">
+              {props.thing.data.try.map((t) => (
+                <a href={t.url}>{t.label}</a>
+              ))}
+            </p>
+          )}
+        </header>
+        {props.thing.data.screenshots.length > 0 && (
+          <div class="shots">
+            {props.thing.data.screenshots.map((s) => (
+              <a href={s.src}>
+                <Image src={s} alt="" widths={[480, 960]} sizes="(max-width: 900px) 100vw, 480px" />
+              </a>
+            ))}
+          </div>
+        )}
+        <Stream posts={postsOf(posts, props.thing.id)} things={names} />
+      </main>
+    )
+  }
+
+  {
+    props.type === 'post' && (
+      <main class="post">
+        <article>
+          {props.post.data.images.map((img) => (
+            <a href={img.src} class="full">
+              <Image src={img} alt={props.post.data.title || ''} widths={[680, 1360, 2040]} sizes="(max-width: 900px) 100vw, 680px" />
+            </a>
+          ))}
+          {props.post.data.title && <h1>{props.post.data.title}</h1>}
+          {props.post.data.link && (
+            <p class="link">
+              <a href={props.post.data.link}>{props.post.data.link.replace(/^https?:\/\//, '').replace(/\/$/, '')}</a>
+            </p>
+          )}
+          {props.post.text && (
+            <div class="body">
+              <Content />
+            </div>
+          )}
+          <footer class="meta">
+            <time datetime={props.post.when.toISOString()}>{formatDate(props.post.data.date)}</time>
+            <span class="kind">{props.post.kind}</span>
+            {props.post.data.things.map((t) => (
+              <a href={`/${t.id}`}>{names.get(t.id) ?? t.id}</a>
+            ))}
+          </footer>
+        </article>
+        <nav class="around small">
+          {props.prev && <a href={`/${props.prev.id}`}>newer</a>}
+          {props.next && <a href={`/${props.next.id}`}>older</a>}
+        </nav>
+      </main>
+    )
+  }
 
   <Footer />
 </Base>
 
 <style>
-  article {
-    padding-bottom: 2rem;
-  }
+  .thing-head { margin-bottom: 1.5rem; max-width: var(--read); }
+  .thing-head h1 { font-size: 1.5rem; margin: 0 0 0.25rem; }
+  .line { color: var(--ink-2); margin: 0 0 0.5rem; }
+  .try { display: flex; gap: 1rem; margin: 0; }
 
-  .post-header {
-    padding: 2rem 0 1.5rem;
-    border-bottom: 1px solid color-mix(in srgb, var(--ink-4), transparent 70%);
+  .shots {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
     margin-bottom: 2rem;
   }
+  .shots a { display: block; border: 1px solid var(--line); }
 
-  .post-meta {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.8rem;
-    color: var(--ink-3);
-    margin-bottom: 0.5rem;
-  }
-
-  h1 {
-    font-size: 1.8rem;
-    margin: 0;
-    letter-spacing: -0.025em;
-    line-height: 1.2;
-  }
-
-  .post-body {
-    font-size: 1.05rem;
-    line-height: 1.7;
-  }
-
-  .post-body :global(h2) {
-    margin-top: 2.5rem;
-  }
-
-  .post-body :global(h3) {
-    margin-top: 2rem;
-  }
-
-  @media (max-width: 640px) {
-    h1 {
-      font-size: 1.5rem;
-    }
-    .post-body {
-      font-size: 1rem;
-    }
-  }
+  .post { max-width: var(--read); }
+  .post .full { display: block; margin: 0 0 1rem; }
+  .post h1 { font-size: 1.5rem; margin: 0.5rem 0 1rem; }
+  .post .body { font-size: 1.05rem; line-height: 1.65; }
+  .post .body :global(h2) { margin-top: 2rem; }
+  .post .body :global(img) { margin: 1rem 0; }
+  .post .link { margin: 0 0 1rem; }
+  .post .meta { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .post .kind { color: var(--ink-3); }
+  .around { display: flex; gap: 1rem; margin-top: 2rem; }
 </style>

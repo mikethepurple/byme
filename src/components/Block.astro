@@ -1,0 +1,113 @@
+---
+import { Image } from 'astro:assets';
+import { render } from 'astro:content';
+import { formatShort } from '../lib/posts';
+import type { Post } from '../lib/load';
+
+interface Props {
+  post: Post;
+  things: Map<string, string>; // thing id → name
+}
+
+const { post, things } = Astro.props;
+const { Content } = await render(post);
+const href = `/${post.id}`;
+const imgs = post.data.images;
+const kind = post.kind;
+const hasText = post.text.length > 0;
+const link = post.data.link || '';
+---
+
+<article class={`block kind-${kind}`}>
+  {
+    imgs.length === 1 && (
+      <a href={href} class="media">
+        <Image
+          src={imgs[0]}
+          alt={post.data.title || ''}
+          widths={[480, 960, 1440]}
+          sizes="(max-width: 900px) 100vw, 560px"
+          loading="lazy"
+        />
+      </a>
+    )
+  }
+  {
+    imgs.length > 1 && (
+      <a href={href} class="media set">
+        {imgs.slice(0, 4).map((img) => (
+          <Image src={img} alt="" widths={[320, 640]} sizes="280px" loading="lazy" />
+        ))}
+        {imgs.length > 4 && <span class="count small">+{imgs.length - 4}</span>}
+      </a>
+    )
+  }
+  {post.data.title && <h2 class="title"><a href={href}>{post.data.title}</a></h2>}
+  {link && <p class="link"><a href={link}>{link.replace(/^https?:\/\//, '').replace(/\/$/, '')}</a></p>}
+  {
+    hasText && (
+      <div class:list={['text', { clip: kind === 'longread' }]}>
+        <Content />
+      </div>
+    )
+  }
+  {kind === 'longread' && <a href={href} class="more small">read</a>}
+  <footer class="meta">
+    <a href={href}><time datetime={post.when.toISOString()}>{formatShort(post.data.date)}</time></a>
+    <span class="kind">{kind}</span>
+    {post.data.things.map((t) => <a href={`/${t.id}`}>{things.get(t.id) ?? t.id}</a>)}
+  </footer>
+</article>
+
+<style>
+  .block {
+    border: 1px solid var(--line);
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .media { display: block; margin: 0 0 12px; }
+  .media :global(img) { width: 100%; }
+
+  .media.set {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    position: relative;
+  }
+  .media.set :global(img) { aspect-ratio: 1 / 1; object-fit: cover; }
+  .media.set .count {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    background: var(--bg);
+    padding: 2px 6px;
+  }
+
+  .title { margin: 0 0 0.5rem; font-size: 1.15rem; }
+  .title a { text-decoration: none; }
+  .title a:hover { text-decoration: underline; }
+
+  .link { margin: 0 0 0.5rem; }
+
+  .text :global(p:last-child) { margin-bottom: 0; }
+  .text :global(h1), .text :global(h2) { font-size: 1.05rem; margin: 1rem 0 0.4rem; }
+  .text :global(img) { margin: 0.75rem 0; }
+
+  .text.clip {
+    max-height: 16em;
+    overflow: hidden;
+    mask-image: linear-gradient(#000 60%, transparent 100%);
+    -webkit-mask-image: linear-gradient(#000 60%, transparent 100%);
+  }
+
+  .more { display: inline-block; margin-top: 0.25rem; }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+  .kind { color: var(--ink-3); }
+</style>

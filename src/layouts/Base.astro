@@ -2,11 +2,15 @@
 interface Props {
   title: string;
   description?: string;
+  image?: string; // absolute or site-relative URL of the OG image
+  type?: 'website' | 'article';
 }
 
-const { title, description = 'by Misha Erikov' } = Astro.props;
 const siteTitle = 'by.erikov.me';
+const { title, description = 'Misha Erikov. Things I make, dropped here as they happen.', image, type = 'website' } =
+  Astro.props;
 const fullTitle = title === siteTitle ? title : `${title} — ${siteTitle}`;
+const ogImage = image ? new URL(image, Astro.site ?? Astro.url).href : undefined;
 ---
 
 <!doctype html>
@@ -14,27 +18,24 @@ const fullTitle = title === siteTitle ? title : `${title} — ${siteTitle}`;
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0e0e0e" />
   <title>{fullTitle}</title>
   <meta name="description" content={description} />
 
-  <!-- OG -->
   <meta property="og:title" content={fullTitle} />
   <meta property="og:description" content={description} />
-  <meta property="og:type" content="website" />
+  <meta property="og:type" content={type} />
   <meta property="og:url" content={Astro.url.href} />
+  {ogImage && <meta property="og:image" content={ogImage} />}
+  <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
 
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet" />
 
-  <!-- RSS -->
   <link rel="alternate" type="application/rss+xml" title={siteTitle} href="/rss.xml" />
-
-  <!-- Micropub -->
   <link rel="micropub" href="https://by.erikov.me/micropub" />
 
-  <!-- Favicon — amber dot -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%23ffb424'/></svg>" />
 </head>
 <body>

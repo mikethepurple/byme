@@ -1,0 +1,64 @@
+---
+import Block from './Block.astro';
+import type { Post } from '../lib/load';
+
+interface Props {
+  posts: Post[];
+  things: Map<string, string>;
+  lane?: 'all' | 'photos' | 'longreads' | 'notes';
+  older?: string; // href of the next page, when there is one
+  newer?: string;
+}
+
+const { posts, things, lane, older, newer } = Astro.props;
+const lanes: { id: NonNullable<Props['lane']>; href: string }[] = [
+  { id: 'all', href: '/stream' },
+  { id: 'photos', href: '/photos' },
+  { id: 'longreads', href: '/longreads' },
+  { id: 'notes', href: '/notes' },
+];
+---
+
+<section class="stream">
+  {
+    lane && (
+      <nav class="lanes small">
+        {lanes.map((l) => (
+          <a href={l.href} class:list={[{ on: l.id === lane }]}>
+            {l.id}
+          </a>
+        ))}
+      </nav>
+    )
+  }
+  {posts.length === 0 && <p class="empty small">Nothing here yet.</p>}
+  {posts.map((p) => <Block post={p} things={things} />)}
+  {
+    (older || newer) && (
+      <nav class="pages small">
+        {newer && <a href={newer}>newer</a>}
+        {older && <a href={older}>older</a>}
+      </nav>
+    )
+  }
+</section>
+
+<style>
+  .stream { max-width: var(--col); }
+
+  .lanes {
+    display: flex;
+    gap: 1rem;
+    padding: 0 0 0.75rem;
+  }
+  .lanes a { text-decoration: none; color: var(--ink-2); }
+  .lanes a.on, .lanes a:hover { color: var(--ink); }
+
+  .empty {
+    border: 1px solid var(--line);
+    padding: 2rem 12px;
+    text-align: center;
+  }
+
+  .pages { display: flex; gap: 1rem; padding: 0.5rem 0; }
+</style>
