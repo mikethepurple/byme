@@ -47,6 +47,7 @@ const tabs: { id: Lane | 'all'; href: string }[] = [
         </a>
       ))}
       <a href="/rss.xml" class="rss">rss</a>
+      <button type="button" class="theme-toggle" aria-label="Switch between light and dark">dark</button>
     </nav>
   </div>
 </header>
@@ -97,8 +98,17 @@ const tabs: { id: Lane | 'all'; href: string }[] = [
   .tabs { display: flex; gap: 1rem; }
   .tabs a { color: var(--ink-2); text-decoration: none; }
   .tabs a:hover { color: var(--ink); }
-  .tabs a.on { color: var(--accent); }
+  .tabs a.on { color: var(--accent-ink); }
   .tabs .rss { margin-left: 0.5rem; }
+  .theme-toggle {
+    font: inherit;
+    color: var(--ink-2);
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+  }
+  .theme-toggle:hover { color: var(--ink); }
 
   @media (max-width: 900px) {
     .header, .header.front { grid-template-columns: minmax(0, 1fr); }

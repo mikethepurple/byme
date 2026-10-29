@@ -6,7 +6,8 @@
   --ink-2:   #9a9a9a;
   --ink-3:   #5c5c5c;
   --line:    #262626;
-  --accent:  #ffb424;
+  --accent:  #ffb424;      /* the dot, underlines */
+  --accent-ink: #ffb424;   /* amber as text: marked items */
 
   --font-body: "Inter Tight", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: "SF Mono", "Fira Code", monospace;
@@ -27,6 +28,7 @@
     --ink-2:  #5a5955;
     --ink-3:  #8f8d88;
     --line:   #d8d6d1;
+    --accent-ink: #9a5200;
   }
 }
 :root[data-theme="light"] {
@@ -36,6 +38,7 @@
   --ink-2:  #5a5955;
   --ink-3:  #8f8d88;
   --line:   #d8d6d1;
+  --accent-ink: #9a5200;
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
@@ -44,6 +47,7 @@
   --ink-2:  #9a9a9a;
   --ink-3:  #5c5c5c;
   --line:   #262626;
+  --accent-ink: #ffb424;
 }
 
 /* View transitions: one easing and one duration for everything that moves,

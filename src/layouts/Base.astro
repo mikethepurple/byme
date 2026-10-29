@@ -35,14 +35,39 @@ const ogImage = image ? new URL(image, Astro.site ?? Astro.url).href : undefined
   <meta name="theme-color" content="#0e0e0e" media="(prefers-color-scheme: dark)" />
   <meta name="theme-color" content="#f2f1ee" media="(prefers-color-scheme: light)" />
   <script is:inline>
-    // ?theme=light|dark pins a theme for this visit (to look at either one).
+    // Theme: follows the system unless chosen. ?theme=light|dark or the toggle
+    // chooses; the choice is remembered in this browser and re-applied after
+    // every in-place navigation.
     (function () {
-      try {
-        var q = new URLSearchParams(location.search).get('theme');
-        if (q === 'light' || q === 'dark') sessionStorage.setItem('theme', q);
-        var t = sessionStorage.getItem('theme');
+      var KEY = 'theme';
+      function chosen() {
+        try {
+          var q = new URLSearchParams(location.search).get('theme');
+          if (q === 'light' || q === 'dark') localStorage.setItem(KEY, q);
+          return localStorage.getItem(KEY);
+        } catch (e) { return null; }
+      }
+      function isDark() {
+        var t = document.documentElement.dataset.theme;
+        return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+      }
+      function apply() {
+        var t = chosen();
         if (t) document.documentElement.dataset.theme = t;
-      } catch (e) {}
+        else delete document.documentElement.dataset.theme;
+        var label = isDark() ? 'light' : 'dark';
+        document.querySelectorAll('.theme-toggle').forEach(function (b) { b.textContent = label; });
+      }
+      apply();
+      document.addEventListener('click', function (e) {
+        var b = e.target && e.target.closest && e.target.closest('.theme-toggle');
+        if (!b) return;
+        e.preventDefault();
+        try { localStorage.setItem(KEY, isDark() ? 'light' : 'dark'); } catch (err) {}
+        apply();
+      });
+      document.addEventListener('astro:after-swap', apply);
+      document.addEventListener('astro:page-load', apply);
     })();
   </script>
   <title>{fullTitle}</title>
