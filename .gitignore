@@ -28,3 +28,6 @@ pnpm-debug.log*
 
 # wrangler local secrets
 .dev.vars
+
+# dev-only frames for visual checks
+public/dev/
