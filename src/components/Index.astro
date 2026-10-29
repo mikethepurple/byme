@@ -26,45 +26,48 @@ const pickedIndex = picked ? things.indexOf(picked) + 1 : 0;
 {
   picked ? (
     <section class="picked">
-      <div class="hero">
-        <div class="text">
-          <div class="head">
-            <span class="n small" transition:name={`thing-${picked.id}-n`}>{String(pickedIndex).padStart(2, '0')}</span>
-            <span class="name" transition:name={`thing-${picked.id}`}>{picked.data.name}</span>
+      {things.map((t, i) =>
+        t.id === picked.id ? (
+          <div class="stage">
+            <div class="hero">
+              <div class="text">
+                <div class="head">
+                  <span class="n small" transition:name={`thing-${t.id}-n`}>{String(i + 1).padStart(2, '0')}</span>
+                  <span class="name" transition:name={`thing-${t.id}`}>{t.data.name}</span>
+                </div>
+                {t.data.line && <p class="blurb">{t.data.line}</p>}
+                {t.data.try.length > 0 && (
+                  <p class="try">
+                    {t.data.try.map((l) => (
+                      <a href={l.url}>{l.label}</a>
+                    ))}
+                  </p>
+                )}
+              </div>
+              {t.data.cover && (
+                <div class="pic" transition:name={`thing-${t.id}-pic`}>
+                  <Image src={t.data.cover} alt={t.data.name} widths={[640, 1280]} sizes="(max-width: 900px) 100vw, 40vw" />
+                </div>
+              )}
+            </div>
+            {t.data.screenshots.length > 0 && (
+              <div class="shots">
+                {t.data.screenshots.map((s) => (
+                  <a href={s.src}>
+                    <Image src={s} alt="" widths={[640, 1280]} sizes="(max-width: 900px) 100vw, 30vw" />
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
-          {picked.data.line && <p class="blurb">{picked.data.line}</p>}
-          {picked.data.try.length > 0 && (
-            <p class="try">
-              {picked.data.try.map((l) => (
-                <a href={l.url}>{l.label}</a>
-              ))}
-            </p>
-          )}
-        </div>
-        {picked.data.cover && (
-          <div class="pic" transition:name={`thing-${picked.id}-pic`}>
-            <Image src={picked.data.cover} alt={picked.data.name} widths={[640, 1280]} sizes="(max-width: 900px) 100vw, 40vw" />
-          </div>
-        )}
-      </div>
-      {picked.data.screenshots.length > 0 && (
-        <div class="shots">
-          {picked.data.screenshots.map((s) => (
-            <a href={s.src}>
-              <Image src={s} alt="" widths={[640, 1280]} sizes="(max-width: 900px) 100vw, 30vw" />
-            </a>
-          ))}
-        </div>
-      )}
-      {things
-        .filter((t) => t.id !== picked.id)
-        .map((t) => (
+        ) : (
           <a href={`/${t.id}`} class="row">
-            <span class="n small" transition:name={`thing-${t.id}-n`}>{String(things.indexOf(t) + 1).padStart(2, '0')}</span>
+            <span class="n small" transition:name={`thing-${t.id}-n`}>{String(i + 1).padStart(2, '0')}</span>
             <span class="rname" transition:name={`thing-${t.id}`}>{t.data.name}</span>
             <span class="rline small">{t.data.line}</span>
           </a>
-        ))}
+        ),
+      )}
     </section>
   ) : (
     <section class="cells">
