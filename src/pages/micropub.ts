@@ -1,146 +1,110 @@
+// Micropub endpoint: the one door for dropping a post. JSON (iA Writer),
+// form-urlencoded, or multipart with photo files (an iOS Shortcut). Nothing is
+// required but the content; the date, slug and kind are worked out here.
+
 import type { APIRoute } from 'astro';
+import {
+  parseMicropubRequest,
+  storedDateFor,
+  buildPost,
+  isAllowedImage,
+  inboxPathFromUrl,
+  MicropubError,
+  type Photo,
+} from '../lib/micropub';
+import { slugFor } from '../lib/slug';
+import { listPostSlugs, commitFiles, GitHubError } from '../lib/github';
+import { REPO, MAX_UPLOAD_BYTES, publishEnv, authorized, json } from '../lib/env';
 
 export const prerender = false;
 
-function slugify(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-}
+// Known thing slugs, from the files at build time (a new thing is a deploy anyway).
+const THINGS = Object.keys(import.meta.glob('/src/content/things/*.yaml')).map(
+  (p) => p.split('/').pop()!.replace(/\.yaml$/, ''),
+);
 
-function todayISO(): string {
-  return new Date().toISOString().split('T')[0];
-}
-
-export const GET: APIRoute = async ({ request }) => {
-  // Verify token on GET requests too
-  const auth = request.headers.get('Authorization');
-  const token = auth?.replace('Bearer ', '');
-  if (!token || token !== process.env.MICROPUB_TOKEN) {
-    return new Response('Unauthorized', { status: 401 });
-  }
+export const GET: APIRoute = async ({ request, locals }) => {
+  const env = publishEnv(locals);
+  if (!authorized(request, env.micropubToken)) return new Response('Unauthorized', { status: 401 });
 
   const url = new URL(request.url);
   const q = url.searchParams.get('q');
-
   if (q === 'config') {
-    return new Response(JSON.stringify({
-      'post-types': [{ type: 'note', name: 'Note' }, { type: 'article', name: 'Article' }],
-    }), { headers: { 'Content-Type': 'application/json' } });
-  }
-
-  if (q === 'syndicate-to') {
-    return new Response(JSON.stringify({ 'syndicate-to': [] }), {
-      headers: { 'Content-Type': 'application/json' },
+    return json({
+      'media-endpoint': `${url.origin}/micropub/media`,
+      'post-types': [
+        { type: 'note', name: 'Note' },
+        { type: 'photo', name: 'Photo' },
+        { type: 'article', name: 'Article' },
+        { type: 'bookmark', name: 'Bookmark' },
+      ],
     });
   }
-
-  return new Response(JSON.stringify({}), {
-    headers: { 'Content-Type': 'application/json' },
-  });
+  if (q === 'syndicate-to') return json({ 'syndicate-to': [] });
+  return json({});
 };
 
-export const POST: APIRoute = async ({ request }) => {
-  // Auth
-  const auth = request.headers.get('Authorization');
-  const token = auth?.replace('Bearer ', '');
-  if (!token || token !== process.env.MICROPUB_TOKEN) {
-    return new Response('Unauthorized', { status: 401 });
-  }
-
-  const body = await request.json();
-
-  // Only handle h-entry creation
-  if (!body.type?.includes('h-entry')) {
-    return new Response('Unsupported type', { status: 400 });
-  }
-
-  const props = body.properties || {};
-  const rawContent = props.content?.[0] || '';
-  // iA Writer sends content as {html: "..."} or plain string
-  let content = typeof rawContent === 'object' && rawContent.html
-    ? rawContent.html
-    : String(rawContent);
-  // Extract title from first heading if present, otherwise use name property
-  const headingMatch = content.match(/^\s*#+ (.+)/);
-  const title = headingMatch ? headingMatch[1].trim() : (props.name?.[0] || 'Untitled');
-  // Strip leading heading — it becomes the frontmatter title
-  if (headingMatch) content = content.replace(/^\s*#+ .+\n*/, '');
-  const isDraft = false;
-  const baseSlug = slugify(title);
-  const slug = baseSlug || `post-${Date.now()}`;
-  const date = todayISO();
-
-  // Build .mdoc file
-  const frontmatter = [
-    '---',
-    `title: "${title.replace(/"/g, '\\"')}"`,
-    `date: '${date}'`,
-    `description: ''`,
-    `draft: ${isDraft}`,
-    '---',
-  ].join('\n');
-  const fileContent = `${frontmatter}\n\n${content}\n`;
-
-  // Commit to GitHub via API
-  const ghToken = process.env.GITHUB_TOKEN;
-  if (!ghToken) {
-    return new Response('GitHub token not configured', { status: 500 });
-  }
-
-  const path = `src/content/posts/${slug}.mdoc`;
-  const res = await fetch(
-    `https://api.github.com/repos/mikethepurple/byme/contents/${path}`,
-    {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${ghToken}`,
-        Accept: 'application/vnd.github+json',
-        'User-Agent': 'by.erikov.me-micropub',
-      },
-      body: JSON.stringify({
-        message: `Add post: ${title}`,
-        content: btoa(unescape(encodeURIComponent(fileContent))),
-        branch: 'main',
-      }),
-    }
-  );
-
-  if (!res.ok) {
-    // File might already exist — try with timestamp suffix
-    const retryPath = `src/content/posts/${slug}-${Date.now()}.mdoc`;
-    const retryRes = await fetch(
-      `https://api.github.com/repos/mikethepurple/byme/contents/${retryPath}`,
-      {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${ghToken}`,
-          Accept: 'application/vnd.github+json',
-          'User-Agent': 'by.erikov.me-micropub',
-        },
-        body: JSON.stringify({
-          message: `Add post: ${title}`,
-          content: btoa(unescape(encodeURIComponent(fileContent))),
-          branch: 'main',
-        }),
+async function resolvePhotos(photos: Photo[]): Promise<Photo[]> {
+  const out: Photo[] = [];
+  for (const p of photos) {
+    if (p.kind === 'file') {
+      if (!isAllowedImage(p.type, p.name)) {
+        throw new MicropubError(415, `Unsupported image ${p.name}: use JPEG, PNG, WebP or GIF (convert HEIC first)`);
       }
-    );
-    if (!retryRes.ok) {
-      const err = await retryRes.text();
-      return new Response(JSON.stringify({ error: err }), {
-        status: 502,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      if (p.data.byteLength > MAX_UPLOAD_BYTES) throw new MicropubError(413, `Image ${p.name} is over 10 MB`);
+      out.push(p);
+    } else if (p.kind === 'url') {
+      const inbox = inboxPathFromUrl(p.url, REPO);
+      if (inbox) {
+        out.push({ kind: 'path', path: inbox });
+        continue;
+      }
+      // Any other URL: fetch it once and commit it with the post.
+      const res = await fetch(p.url);
+      if (!res.ok) throw new MicropubError(400, `Could not fetch photo ${p.url}`);
+      const type = res.headers.get('content-type')?.split(';')[0] ?? '';
+      const name = new URL(p.url).pathname.split('/').pop() || 'photo';
+      if (!isAllowedImage(type, name)) throw new MicropubError(415, `Unsupported image at ${p.url}`);
+      const data = new Uint8Array(await res.arrayBuffer());
+      if (data.byteLength > MAX_UPLOAD_BYTES) throw new MicropubError(413, `Image at ${p.url} is over 10 MB`);
+      out.push({ kind: 'file', name, type, data });
+    } else {
+      out.push(p);
     }
   }
+  return out;
+}
 
-  const postUrl = `https://by.erikov.me/${slug}`;
-  return new Response(JSON.stringify({ url: postUrl }), {
-    status: 201,
-    headers: {
-      Location: postUrl,
-      'Content-Type': 'application/json',
-    },
-  });
+export const POST: APIRoute = async ({ request, locals }) => {
+  const env = publishEnv(locals);
+  if (!authorized(request, env.micropubToken)) return new Response('Unauthorized', { status: 401 });
+  if (!env.githubToken) return new Response('GitHub token not configured', { status: 500 });
+
+  const length = Number(request.headers.get('content-length') ?? 0);
+  if (length > MAX_UPLOAD_BYTES * 1.4) return new Response('Request too large', { status: 413 });
+
+  try {
+    const inc = await parseMicropubRequest(request);
+    const photos = await resolvePhotos(inc.photos);
+    if (!inc.content && !inc.name && !inc.link && photos.length === 0) {
+      throw new MicropubError(400, 'Nothing to post');
+    }
+
+    const wanted = inc.categories.map((c) => c.trim().toLowerCase());
+    const things = THINGS.filter((t) => wanted.includes(t));
+
+    const gh = { token: env.githubToken, repo: REPO, branch: env.branch };
+    const date = storedDateFor(inc, new Date(), env.requestZone);
+    const slug = slugFor(date, await listPostSlugs(gh));
+    const { files } = buildPost({ slug, date, name: inc.name, content: inc.content, things, link: inc.link, photos });
+    await commitFiles(gh, files, `Post ${slug}`);
+
+    const postUrl = `${new URL(request.url).origin}/${slug}`;
+    return new Response(null, { status: 201, headers: { Location: postUrl } });
+  } catch (e) {
+    if (e instanceof MicropubError) return json({ error: 'invalid_request', error_description: e.message }, e.status);
+    if (e instanceof GitHubError) return json({ error: 'server_error', error_description: e.message }, 502);
+    const message = e instanceof Error ? e.message : String(e);
+    return json({ error: 'server_error', error_description: message }, 500);
+  }
 };

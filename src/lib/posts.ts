@@ -79,18 +79,23 @@ export function wallParts(stored: string): Parts {
   return { year, month, day, hour, minute, second };
 }
 
-/** The instant a stored date names; a string without a zone is taken as HOME_ZONE. */
-export function parseDate(stored: string): Date {
+/** The instant a stored date names; a string without a zone is read as wall clock in `zone`. */
+export function instantIn(stored: string, zone: string): Date {
   const m = stored.match(STORED);
   if (!m) return new Date(stored);
   if (m[7]) return new Date(stored);
   const [, y, mo, d, h = '0', mi = '0', sec = '0'] = m;
   const guess = Date.UTC(+y, +mo - 1, +d, +h, +mi, +sec);
-  const off1 = offsetMinutes(new Date(guess), HOME_ZONE);
+  const off1 = offsetMinutes(new Date(guess), zone);
   let utc = guess - off1 * 60000;
-  const off2 = offsetMinutes(new Date(utc), HOME_ZONE);
+  const off2 = offsetMinutes(new Date(utc), zone);
   if (off2 !== off1) utc = guess - off2 * 60000;
   return new Date(utc);
+}
+
+/** The instant a stored date names; a string without a zone is taken as HOME_ZONE. */
+export function parseDate(stored: string): Date {
+  return instantIn(stored, HOME_ZONE);
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
