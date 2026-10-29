@@ -1,10 +1,24 @@
 ---
-// The header is a ruled row split the same way as the panes under it, so each
-// column carries its own small caption, like a table head.
+// One ruled row, split like the panes under it. Left: the name (home).
+// Right: the menu stripe for the feed — where you are (everything › Ada),
+// the kind tabs, and rss.
+import type { Lane } from '../lib/load';
+
 interface Props {
   split?: 'front' | 'feed';
+  label?: string; // "everything", "Ada", "October 2026"
+  root?: string; // when narrowed: where "everything" goes
+  base?: string; // where the tabs live: '' (everything), '/ada', '/2026-10'
+  allHref?: string; // where the "all" tab goes when there is no base
+  lane?: Lane;
 }
-const { split = 'feed' } = Astro.props;
+const { split = 'feed', label = 'everything', root, base = '', allHref = '/everything', lane } = Astro.props;
+const tabs: { id: Lane | 'all'; href: string }[] = [
+  { id: 'all', href: base || allHref },
+  { id: 'photos', href: `${base}/photos` },
+  { id: 'longreads', href: `${base}/longreads` },
+  { id: 'notes', href: `${base}/notes` },
+];
 ---
 
 <header class:list={['header', split]}>
@@ -14,9 +28,26 @@ const { split = 'feed' } = Astro.props;
       <span class="name">by.erikov.me</span>
     </a>
   </div>
-  <div class="cell right">
-    <span class="cap">the feed, newest first</span>
-    <a href="/rss.xml" class="rss small">rss</a>
+  <div class="cell right small">
+    <span class="what">
+      {root ? (
+        <>
+          <a href={root} class="up">everything</a>
+          <span class="sep"> › </span>
+          {label}
+        </>
+      ) : (
+        label
+      )}
+    </span>
+    <nav class="tabs">
+      {tabs.map((t) => (
+        <a href={t.href} class:list={[{ on: t.id === 'all' ? !lane : t.id === lane }]}>
+          {t.id}
+        </a>
+      ))}
+      <a href="/rss.xml" class="rss">rss</a>
+    </nav>
   </div>
 </header>
 
@@ -36,6 +67,7 @@ const { split = 'feed' } = Astro.props;
     align-items: baseline;
     justify-content: space-between;
     gap: 1rem;
+    flex-wrap: wrap;
     padding: 14px var(--page-pad);
   }
 
@@ -57,20 +89,18 @@ const { split = 'feed' } = Astro.props;
 
   .name { font-size: 0.95rem; font-weight: 500; }
 
-  .cap {
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-    white-space: nowrap;
-  }
+  .what { color: var(--ink); }
+  .what .up { color: var(--ink-2); text-decoration: none; }
+  .what .up:hover { color: var(--ink); text-decoration: underline; }
+  .sep { color: var(--ink-3); }
 
-  .rss { color: var(--ink-2); text-decoration: none; }
-  .rss:hover { color: var(--ink); }
+  .tabs { display: flex; gap: 1rem; }
+  .tabs a { color: var(--ink-2); text-decoration: none; }
+  .tabs a:hover { color: var(--ink); }
+  .tabs a.on { color: var(--accent); }
+  .tabs .rss { margin-left: 0.5rem; }
 
   @media (max-width: 900px) {
     .header, .header.front { grid-template-columns: minmax(0, 1fr); }
-    .cell.right { display: none; }
-    .cell .cap { display: none; }
   }
 </style>
