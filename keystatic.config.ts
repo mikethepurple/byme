@@ -51,7 +51,13 @@ export default config({
           label: 'Slug',
           description: 'Timestamp like 2026-10-29-1911; set by the publish endpoint',
         }),
-        date: fields.datetime({ label: 'Date', validation: { isRequired: true } }),
+        // A plain string: the wall clock where it was posted, with its offset
+        // (2026-11-03T09:15:00+09:00). Keystatic's datetime field cannot hold an offset.
+        date: fields.text({
+          label: 'Date',
+          description: 'As posted, with its offset, e.g. 2026-11-03T09:15:00+09:00',
+          validation: { isRequired: true },
+        }),
         title: fields.text({ label: 'Title (optional)' }),
         things: fields.array(
           fields.relationship({ label: 'Thing', collection: 'things' }),
