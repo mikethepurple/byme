@@ -17,13 +17,13 @@ const n = String(index).padStart(2, '0');
 
 <a href={`/${thing.id}`} class:list={['cell', { on }]}>
   <div class="head">
-    <span class="n small">{n}</span>
-    <span class="name">{thing.data.name}</span>
+    <span class="n small" transition:name={`thing-${thing.id}-n`}>{n}</span>
+    <span class="name" transition:name={`thing-${thing.id}`}>{thing.data.name}</span>
   </div>
   <p class="line small">{thing.data.line}</p>
   {
     thing.data.cover && (
-      <div class="pic">
+      <div class="pic" transition:name={`thing-${thing.id}-pic`}>
         <Image src={thing.data.cover} alt={thing.data.name} widths={[320, 640]} sizes="(max-width: 900px) 45vw, 24vw" />
       </div>
     )

@@ -1,4 +1,5 @@
 ---
+import { ClientRouter } from 'astro:transitions';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 
@@ -7,7 +8,7 @@ interface Props {
   description?: string;
   image?: string; // absolute or site-relative URL of the OG image
   type?: 'website' | 'article';
-  section?: 'projects' | 'stream';
+  mode?: 'browse' | 'read';
   wide?: boolean; // content runs edge to edge (the front grid)
 }
 
@@ -17,7 +18,7 @@ const {
   description = 'Misha Erikov. Things I make, dropped here as they happen.',
   image,
   type = 'website',
-  section,
+  mode = 'browse',
   wide = false,
 } = Astro.props;
 const fullTitle = title === siteTitle ? title : `${title} — ${siteTitle}`;
@@ -43,6 +44,7 @@ const ogImage = image ? new URL(image, Astro.site ?? Astro.url).href : undefined
     })();
   </script>
   <title>{fullTitle}</title>
+  <ClientRouter />
   <meta name="description" content={description} />
 
   <meta property="og:title" content={fullTitle} />
@@ -62,7 +64,7 @@ const ogImage = image ? new URL(image, Astro.site ?? Astro.url).href : undefined
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%23ffb424'/></svg>" />
 </head>
 <body class:list={[{ app: wide }]}>
-  <Header section={section} />
+  <Header mode={mode} />
   {wide ? <slot /> : <div class="page"><slot /></div>}
   {!wide && <Footer />}
 </body>

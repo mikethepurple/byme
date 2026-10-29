@@ -18,7 +18,7 @@ const hasText = post.text.length > 0;
 const link = post.data.link || '';
 ---
 
-<article class={`block kind-${kind}`}>
+<article class={`block kind-${kind}`} transition:name={`post-${post.id}`}>
   {
     imgs.length === 1 && (
       <a href={href} class="media">

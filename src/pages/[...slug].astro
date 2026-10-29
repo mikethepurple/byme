@@ -14,6 +14,7 @@ import {
   scopePosts,
   scopeLabel,
   monthsOf,
+  yearsOf,
   firstLine,
   LANES,
   PAGE_SIZE,
@@ -40,7 +41,8 @@ export async function getStaticPaths() {
     paths.push({ params: { slug: t.id }, props: { type: 'browse', thing: t.id } });
     for (const lane of LANES) paths.push({ params: { slug: `${t.id}/${lane}` }, props: { type: 'browse', thing: t.id, lane } });
   }
-  for (const m of monthsOf(posts)) {
+  // A month (2026-10) or a whole year (2026) narrows the feed the same way: by prefix.
+  for (const m of [...yearsOf(posts), ...monthsOf(posts)]) {
     paths.push({ params: { slug: m }, props: { type: 'browse', month: m } });
     for (const lane of LANES) paths.push({ params: { slug: `${m}/${lane}` }, props: { type: 'browse', month: m, lane } });
   }
@@ -139,7 +141,7 @@ const base = scope.thing ? `/${scope.thing}` : scope.month ? `/${scope.month}` :
   <Column slot="right" label={label} base={base} lane={scope.lane} posts={feed} things={names} older={older} newer={newer} rows={rows}>
     {
       props.type === 'read' && (
-        <article class="open">
+        <article class="open" transition:name={`post-${props.post.id}`}>
           {props.post.data.images.map((img) => (
             <a href={img.src} class="full">
               <Image src={img} alt={props.post.data.title || ''} widths={[680, 1360, 2040]} sizes="(max-width: 900px) 100vw, 50vw" />

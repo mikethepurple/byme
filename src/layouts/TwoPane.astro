@@ -12,30 +12,20 @@ interface Props {
   image?: string;
   type?: 'website' | 'article';
   mode?: 'browse' | 'read';
-  leftLabel?: string;
-  rightLabel?: string;
 }
 
-const {
-  title,
-  description,
-  image,
-  type,
-  mode = 'browse',
-  leftLabel = 'projects I\'m working on',
-  rightLabel = 'the feed, newest first',
-} = Astro.props;
+const { title, description, image, type, mode = 'browse' } = Astro.props;
 ---
 
-<Base title={title} description={description} image={image} type={type} wide>
+<Base title={title} description={description} image={image} type={type} mode={mode} wide>
   <main class:list={['panes', mode]}>
     <section class="pane left">
-      <div class="edge" aria-hidden="true"><span>{leftLabel}</span></div>
       <slot name="left" />
     </section>
     <aside class="pane right">
-      <div class="edge" aria-hidden="true"><span>{rightLabel}</span></div>
-      <slot name="right" />
+      <div class="column" transition:name="feed">
+        <slot name="right" />
+      </div>
     </aside>
   </main>
 </Base>
@@ -51,20 +41,6 @@ const {
 
   .pane { background: var(--bg); }
 
-  /* A small caption standing in the pane's gutter, like a spine label. It
-     stays put while the pane scrolls. */
-  .edge { position: sticky; top: 0; height: 0; z-index: 2; }
-  .edge span {
-    position: absolute;
-    left: 7px;
-    top: 16px;
-    writing-mode: vertical-rl;
-    font-size: 10.5px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-    white-space: nowrap;
-  }
 
   @media (min-width: 901px) {
     :global(html), :global(body.app) { height: 100%; }

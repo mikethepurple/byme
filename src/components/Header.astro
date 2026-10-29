@@ -1,26 +1,42 @@
 ---
-// One ruled row on every page: the name (home) and the feed address.
+// The header is a ruled row split the same way as the panes under it, so each
+// column carries its own small caption, like a table head.
+interface Props {
+  mode?: 'browse' | 'read';
+}
+const { mode = 'browse' } = Astro.props;
 ---
 
-<header class="header">
-  <div class="row">
+<header class:list={['header', mode]}>
+  <div class="cell">
     <a href="/" class="brand">
       <span class="dot"></span>
       <span class="name">by.erikov.me</span>
     </a>
-    <nav class="nav small">
-      <a href="/rss.xml">rss</a>
-    </nav>
+    <span class="cap">projects I'm working on</span>
+  </div>
+  <div class="cell right">
+    <span class="cap">the feed, newest first</span>
+    <a href="/rss.xml" class="rss small">rss</a>
   </div>
 </header>
 
 <style>
-  .header { border-bottom: 1px solid var(--line); }
+  .header {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .header.read { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 
-  .row {
+  .cell {
+    background: var(--bg);
     display: flex;
-    align-items: center;
+    align-items: baseline;
     justify-content: space-between;
+    gap: 1rem;
     padding: 14px var(--page-pad);
   }
 
@@ -42,6 +58,20 @@
 
   .name { font-size: 0.95rem; font-weight: 500; }
 
-  .nav a { text-decoration: none; color: var(--ink-2); }
-  .nav a:hover { color: var(--ink); }
+  .cap {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    white-space: nowrap;
+  }
+
+  .rss { color: var(--ink-2); text-decoration: none; }
+  .rss:hover { color: var(--ink); }
+
+  @media (max-width: 900px) {
+    .header { grid-template-columns: minmax(0, 1fr); }
+    .cell.right { display: none; }
+    .cell .cap { display: none; }
+  }
 </style>

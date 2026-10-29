@@ -55,8 +55,14 @@ export function scopePosts(posts: Post[], s: Scope): Post[] {
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
+/** "October 2026" for a month, "2026" for a whole year. */
 export function monthLabel(m: string): string {
+  if (m.length === 4) return m;
   return `${MONTH_NAMES[+m.slice(5, 7) - 1]} ${m.slice(0, 4)}`;
+}
+
+export function yearsOf(posts: Post[]): string[] {
+  return Array.from(new Set(posts.map((p) => p.data.date.slice(0, 4)))).sort().reverse();
 }
 
 /** "everything", "Ada", "Ada · photos", "October 2026" */

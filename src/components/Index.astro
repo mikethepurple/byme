@@ -29,8 +29,8 @@ const pickedIndex = picked ? things.indexOf(picked) + 1 : 0;
       <div class="hero">
         <div class="text">
           <div class="head">
-            <span class="n small">{String(pickedIndex).padStart(2, '0')}</span>
-            <span class="name">{picked.data.name}</span>
+            <span class="n small" transition:name={`thing-${picked.id}-n`}>{String(pickedIndex).padStart(2, '0')}</span>
+            <span class="name" transition:name={`thing-${picked.id}`}>{picked.data.name}</span>
           </div>
           {picked.data.line && <p class="line">{picked.data.line}</p>}
           {picked.data.try.length > 0 && (
@@ -42,7 +42,7 @@ const pickedIndex = picked ? things.indexOf(picked) + 1 : 0;
           )}
         </div>
         {picked.data.cover && (
-          <div class="pic">
+          <div class="pic" transition:name={`thing-${picked.id}-pic`}>
             <Image src={picked.data.cover} alt={picked.data.name} widths={[640, 1280]} sizes="(max-width: 900px) 100vw, 40vw" />
           </div>
         )}
@@ -60,8 +60,8 @@ const pickedIndex = picked ? things.indexOf(picked) + 1 : 0;
         .filter((t) => t.id !== picked.id)
         .map((t) => (
           <a href={`/${t.id}`} class="row">
-            <span class="n small">{String(things.indexOf(t) + 1).padStart(2, '0')}</span>
-            <span class="rname">{t.data.name}</span>
+            <span class="n small" transition:name={`thing-${t.id}-n`}>{String(things.indexOf(t) + 1).padStart(2, '0')}</span>
+            <span class="rname" transition:name={`thing-${t.id}`}>{t.data.name}</span>
             <span class="rline small">{t.data.line}</span>
           </a>
         ))}
@@ -78,10 +78,11 @@ const pickedIndex = picked ? things.indexOf(picked) + 1 : 0;
 
 <section class="list">
   <h2 class="label small">When</h2>
+  <a href={thing ? `/${thing}` : '/'} class:list={['line', { on: !month }]}>all time</a>
   {
     years.map((y) => (
       <div class="year">
-        <span class="y">{y}</span>
+        <a href={`/${y}`} class:list={['y', { on: y === month }]}>{y}</a>
         <span class="months">
           {months
             .filter((m) => m.startsWith(y))
@@ -163,7 +164,19 @@ const pickedIndex = picked ? things.indexOf(picked) + 1 : 0;
     padding: 10px var(--page-pad);
     border-bottom: 1px solid var(--line);
   }
-  .y { color: var(--ink-2); }
+  .y { color: var(--ink-2); text-decoration: none; }
+  .y:hover { text-decoration: underline; }
+  .y.on { color: var(--accent); }
+
+  .line {
+    display: block;
+    padding: 10px var(--page-pad);
+    border-bottom: 1px solid var(--line);
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .line:hover { text-decoration: underline; }
+  .line.on { color: var(--accent); }
   .months { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; }
   .months a { text-decoration: none; color: var(--ink); }
   .months a.on { color: var(--accent); }
