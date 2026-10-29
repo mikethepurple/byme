@@ -1,14 +1,34 @@
-import { defineCollection, z } from 'astro:content';
+import { defineCollection, reference, z } from 'astro:content';
 import { glob } from 'astro/loaders';
 
-const posts = defineCollection({
-  loader: glob({ pattern: '**/*.mdoc', base: './src/content/posts' }),
-  schema: z.object({
-    title: z.string(),
-    date: z.string(),
-    description: z.string().optional().default(''),
-    draft: z.boolean().optional().default(false),
-  }),
+// A thing: a product, project or practice. A channel over the stream.
+const things = defineCollection({
+  loader: glob({ pattern: '**/*.yaml', base: './src/content/things' }),
+  schema: ({ image }) =>
+    z.object({
+      name: z.string(),
+      line: z.string().default(''),
+      order: z.number().default(99),
+      try: z.array(z.object({ label: z.string(), url: z.string().url() })).default([]),
+      cover: image().optional(),
+      screenshots: z.array(image()).default([]),
+    }),
 });
 
-export const collections = { posts };
+// A post: anything dropped in. Only the date is required.
+// Image paths are root-relative (`/src/assets/posts/<slug>/1.jpg`), written by the
+// publish endpoint; Vite resolves them against the project root.
+const posts = defineCollection({
+  loader: glob({ pattern: '**/*.mdoc', base: './src/content/posts' }),
+  schema: ({ image }) =>
+    z.object({
+      date: z.string(),
+      title: z.string().optional(),
+      things: z.array(reference('things')).default([]),
+      images: z.array(image()).default([]),
+      link: z.string().url().optional().or(z.literal('')),
+      draft: z.boolean().default(false),
+    }),
+});
+
+export const collections = { things, posts };

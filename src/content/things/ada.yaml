@@ -1,0 +1,8 @@
+name: Ada
+line: A sketchbook for the iPad that reads what I draw and answers on the page.
+order: 1
+try:
+  - label: Try Ada
+    url: https://ada.erikov.me/try
+cover: /src/assets/things/ada/cover.jpg
+screenshots: []

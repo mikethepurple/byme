@@ -1,0 +1,8 @@
+name: Detourist
+line: One spot a day on a walk I already take, in a city I already know.
+order: 2
+try:
+  - label: detouri.st
+    url: https://detouri.st
+cover: /src/assets/things/detourist/cover.jpg
+screenshots: []
