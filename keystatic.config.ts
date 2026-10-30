@@ -46,6 +46,8 @@ export default config({
     posts: collection({
       label: 'Posts',
       slugField: 'slug',
+      // the list shows what a post is, not only its timestamp
+      columns: ['title', 'date'],
       path: 'src/content/posts/*',
       format: { contentField: 'body' },
       schema: {
