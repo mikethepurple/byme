@@ -1,7 +1,7 @@
 ---
 // About, per the hand-over v2 (§7): the project page template with the strip
 // in the dot's colour; a head with the name, a short bio and a link; then a
-// grid of blocks — the projects. The bio is a placeholder until Misha writes it.
+// grid of blocks — the projects. The bio is one line until Misha writes it.
 import TwoPane from '../layouts/TwoPane.astro';
 import Nav from '../components/Nav.astro';
 import Head from '../components/Head.astro';
@@ -23,8 +23,7 @@ const byThing = new Map(things.map((t) => [t.id, posts.filter((p) => projectOf(p
     slot="head"
     left={[{ text: 'About' }]}
     title="Misha Erikov"
-    description="Things I make, dropped here as they happen. This line is a placeholder; the bio is mine to write."
-    link={{ label: 'erikov@hey.com', url: 'mailto:erikov@hey.com' }}
+    description="Things I make, dropped here as they happen."
   />
   <Grid slot="content" things={things} byThing={byThing} posts={[]} names={names} hues={hues} />
   <Nav slot="side" things={things} posts={posts} hues={hues} where="about" />
