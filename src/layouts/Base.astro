@@ -21,6 +21,14 @@ const ogImage = new URL(image ?? '/og.png', Astro.site ?? Astro.url).href;
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#f2f1ee" />
   <script is:inline>
+    // One address: erikov.me and www forward to by.erikov.me, path kept.
+    // (Pages ignores host rules in _redirects; a zone Redirect Rule would do it server-side.)
+    if (location.hostname === 'erikov.me' || location.hostname === 'www.erikov.me') {
+      location.replace('https://by.erikov.me' + location.pathname + location.search + location.hash);
+    }
+  </script>
+  <link rel="canonical" href={new URL(Astro.url.pathname, 'https://by.erikov.me').href} />
+  <script is:inline>
     // Theme: paper unless dark is chosen. ?theme=light|dark or the toggle
     // chooses; the choice is remembered in this browser and re-applied after
     // every in-place navigation.

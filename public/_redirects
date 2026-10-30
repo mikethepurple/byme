@@ -1,4 +1,0 @@
-# erikov.me is the same Pages project; the one address is by.erikov.me.
-# Prerendered pages never reach the worker, so the redirect lives here.
-https://erikov.me/* https://by.erikov.me/:splat 301
-https://www.erikov.me/* https://by.erikov.me/:splat 301
