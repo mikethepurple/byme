@@ -14,8 +14,7 @@
   --font-body: "Inter Tight", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: "SF Mono", "Fira Code", monospace;
 
-  --page-pad: 24px;  /* inside a cell or a nav row */
-  --pad-wide: 48px;  /* a post or a project head: air on the left */
+  --page-pad: 24px;  /* inside a cell, a nav row, a project head, a post: one edge everywhere */
   --read: 680px;     /* a post, read in full */
 }
 
@@ -173,5 +172,5 @@ li { margin-bottom: 0.25em; }
 .meta a:hover { color: var(--ink); }
 
 @media (max-width: 640px) {
-  :root { --page-pad: 16px; --pad-wide: 16px; }
+  :root { --page-pad: 16px; }
 }

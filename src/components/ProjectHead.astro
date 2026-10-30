@@ -1,8 +1,7 @@
 ---
 // The top of a project page: number (in the project's colour), name, the one
-// line, where to try it, a small picture on the right. Its posts follow as a
-// grid; the column's kind and when rows narrow them.
-import { Image } from 'astro:assets';
+// line, where to try it. No picture: the posts underneath are the pictures.
+// The column's kind and when rows narrow them.
 import type { Thing } from '../lib/load';
 
 interface Props {
@@ -30,22 +29,11 @@ const { thing, index } = Astro.props;
       )
     }
   </div>
-  {
-    thing.data.cover && (
-      <div class="cover">
-        <Image src={thing.data.cover} alt="" widths={[480, 960]} sizes="(max-width: 900px) 50vw, 22vw" />
-      </div>
-    )
-  }
 </header>
 
 <style>
   .head {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) clamp(200px, 32%, 480px);
-    gap: 32px;
-    align-items: start;
-    padding: 28px var(--pad-wide) 28px;
+    padding: 28px var(--page-pad) 28px; /* the cells' padding, so the head's edges line up with theirs */
   }
   .n { color: var(--ink-3); }
   .n.tint { font-weight: 500; color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
@@ -58,11 +46,4 @@ const { thing, index } = Astro.props;
   }
   .line { max-width: 44ch; margin: 1rem 0 0; color: var(--ink-2); font-size: 1.0625rem; }
   .try { display: flex; gap: 1.25rem; margin: 0.75rem 0 0; }
-  .cover { justify-self: end; width: 100%; }
-  .cover :global(img) { width: 100%; height: auto; }
-
-  @container pane (max-width: 640px) {
-    .head { grid-template-columns: minmax(0, 1fr); align-items: start; }
-    .cover { width: 50%; }
-  }
 </style>

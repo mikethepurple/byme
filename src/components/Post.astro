@@ -76,8 +76,8 @@ const lead = !post.data.title && post.kind === 'note';
     display: flex;
     flex-direction: column;
     min-height: 64vh;
-    padding: 28px var(--pad-wide) 48px;
-    max-width: calc(var(--read) + 2 * var(--pad-wide));
+    padding: 28px var(--page-pad) 48px; /* the cells' padding, so the post lines up with what follows */
+    max-width: calc(var(--read) + 2 * var(--page-pad));
   }
 
   /* the label row, as on the cell this post came from */
