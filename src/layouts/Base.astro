@@ -11,7 +11,7 @@ interface Props {
 const siteTitle = 'by.erikov.me';
 const { title, description = 'Misha Erikov. Things I make, dropped here as they happen.', image, type = 'website' } = Astro.props;
 const fullTitle = title === siteTitle ? title : `${title} — ${siteTitle}`;
-const ogImage = image ? new URL(image, Astro.site ?? Astro.url).href : undefined;
+const ogImage = new URL(image ?? '/og.png', Astro.site ?? Astro.url).href;
 ---
 
 <!doctype html>
@@ -68,12 +68,8 @@ const ogImage = image ? new URL(image, Astro.site ?? Astro.url).href : undefined
   <meta property="og:description" content={description} />
   <meta property="og:type" content={type} />
   <meta property="og:url" content={Astro.url.href} />
-  {ogImage && <meta property="og:image" content={ogImage} />}
-  <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
-
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet" />
+  <meta property="og:image" content={ogImage} />
+  <meta name="twitter:card" content="summary_large_image" />
 
   <link rel="alternate" type="application/rss+xml" title={siteTitle} href="/rss.xml" />
   <link rel="micropub" href="https://by.erikov.me/micropub" />

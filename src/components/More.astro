@@ -1,0 +1,68 @@
+---
+// "More in {project}" beside an open post: the ledger of the rest of its
+// project, the count with "all →", then "← older / newer →". On desktop it
+// sits in the menu column under the filters (screen 10); under 1200px it
+// follows the article.
+import { ledger } from '../lib/related';
+import { hueStyle, type Hue, type Post } from '../lib/load';
+
+interface Props {
+  more: Post[];
+  href: string;
+  projName: string;
+  hue?: Hue;
+  newer?: Post;
+  older?: Post;
+}
+
+const { more, href, projName, hue, newer, older } = Astro.props;
+const rows = ledger(more, 3);
+const n = more.length;
+---
+
+<div class="more proj" style={hueStyle(hue)}>
+  <div class="head">More in <a href={href} class="c">{projName}</a></div>
+  <div class="ledger">
+    {
+      rows.map((r) => (
+        <div class="lrow">
+          <span class="quiet">{r.kind}</span>
+          {r.id ? <a href={`/${r.id}`} class="t">{r.title}</a> : <span class="t" />}
+          <span class="quiet">{r.date}</span>
+        </div>
+      ))
+    }
+    <div class="lfoot c">
+      <span>{n ? `${n} post${n > 1 ? 's' : ''}` : 'No other posts'}</span>
+      {n > 0 && <a href={href}>all →</a>}
+    </div>
+  </div>
+  <div class="around">
+    {older ? <a href={`/${older.id}`}>← older</a> : <span class="quiet">← older</span>}
+    {newer ? <a href={`/${newer.id}`}>newer →</a> : <span class="quiet">newer →</span>}
+  </div>
+</div>
+
+<style>
+  .more { border-top: 1px solid var(--line); padding: 18px 20px; display: flex; flex-direction: column; }
+  .head { font-size: 13px; }
+  .head a { text-decoration: none; }
+  .c { color: var(--pc); }
+  .quiet { color: var(--quiet); }
+  .ledger { display: flex; flex-direction: column; margin-top: 14px; border-top: 1px solid var(--ink); }
+  .lrow {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+    line-height: 16px;
+  }
+  .lrow .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink); text-decoration: none; }
+  .lrow a.t:hover { color: var(--ink-2); }
+  .lfoot { display: flex; justify-content: space-between; padding: 7px 0; font-size: 13px; }
+  .lfoot a { color: inherit; text-decoration: none; }
+  .around { display: flex; justify-content: space-between; margin-top: 28px; font-size: 13px; border-top: 1px solid var(--line); padding-top: 7px; }
+  .around a { text-decoration: none; }
+</style>

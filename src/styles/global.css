@@ -8,13 +8,13 @@
   --ink-2:  #6b6a66;
   --ink-3:  #8a8985;
   --line:   #dcdad5;
+  --line-strong: #a9a7a1;  /* the heavier line under a project card (hand-over 9d) */
   --accent: #f0a020;       /* the dot */
   --accent-ink: #a8760e;   /* amber as text */
   --quiet:  #8a8985;       /* labels, dates (hand-over "quiet") */
   --misc:   #8a8985;       /* the colour of posts with no project */
-  --tint-mix: 68%;         /* a project's colour, darkened for paper */
 
-  --font-body: "Inter Tight", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
   --font-mono: "SF Mono", "Fira Code", monospace;
 
   --cell:    380px;        /* every grid cell is this tall */
@@ -28,10 +28,15 @@
   --ink-2:  #9a9a9a;
   --ink-3:  #5c5c5c;
   --line:   #262626;
+  --line-strong: #4a4a4a;
   --accent-ink: #ffb424;
   --quiet:  #6a6a6a;
-  --tint-mix: 100%;        /* a project's colour as given */
 }
+
+/* A project's colour: --c is the exact paper value, --cd the brighter one for
+   dark; an element with class .proj carries both and reads --pc. */
+.proj { --pc: var(--c); }
+:root[data-theme="dark"] .proj { --pc: var(--cd, var(--c)); }
 
 /* View transitions: one easing and one duration for everything that moves,
    a quick cross-fade for the rest. */
@@ -63,8 +68,6 @@ body {
   font-size: 15px;
   line-height: 1.4;
   color: var(--ink);
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
 }
 
 /* --- Typography --- */
@@ -85,12 +88,12 @@ p { margin: 0 0 1em; }
 a {
   color: var(--ink);
   text-decoration: underline;
-  text-decoration-color: var(--ink-3);
+  text-decoration-color: currentColor;
   text-underline-offset: 3px;
   text-decoration-thickness: 1px;
 }
 
-a:hover { text-decoration-color: var(--accent); }
+a:hover { color: var(--ink-2); }
 
 /* --- Blocks of text --- */
 
@@ -135,11 +138,6 @@ hr {
 
 ul, ol { padding-left: 1.25rem; margin: 0 0 1em; }
 li { margin-bottom: 0.25em; }
-
-/* --- Colour-coding --- */
-
-/* a project's colour (set per element as --c), darkened on paper */
-.tint { color: color-mix(in oklab, var(--c, var(--ink)) var(--tint-mix), #000); }
 
 /* --- Small type (dates, kinds, nav) --- */
 

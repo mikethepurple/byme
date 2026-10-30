@@ -1,22 +1,23 @@
 ---
 // The menu, per the hand-over. Rows: logo, project, kind, when, then
-// "about · rss · dark", which grows so the menu reaches the bottom of its
-// grid row. Every row's "all" clears only that row's filter. The project row
-// always lists every project plus misc; the kind row lists only the kinds
-// that have posts in the scope in force. Active items are underlined; on a
-// project or post page the active project is in its colour too.
+// "about · rss · dark". Every row's "all" clears only that row's filter. The
+// project row always lists every project plus misc; the kind row lists only
+// the kinds that have posts in the scope in force. Active items are
+// underlined; on a project or post page the active project is in its colour.
+// A post page adds its "More in {project}" block after, through the slot.
 import { MISC, kindsPresent } from '../lib/related';
-import type { Post, Thing, Scope } from '../lib/load';
+import { MISC_HUE, hueStyle, type Hue, type Post, type Thing, type Scope } from '../lib/load';
 
 interface Props {
   things: Thing[];
   posts: Post[]; // all posts, for the When row
   scoped?: Post[]; // the posts in the scope in force, for the kind row
   scope?: Scope; // what is in force
+  hues?: Map<string, Hue>;
   where?: 'front' | 'browse' | 'post' | 'about';
 }
 
-const { things, posts, scoped = posts, scope = {}, where = 'browse' } = Astro.props;
+const { things, posts, scoped = posts, scope = {}, hues = new Map(), where = 'browse' } = Astro.props;
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const months = Array.from(new Set(posts.map((p) => p.data.date.slice(0, 7)))).sort().reverse();
@@ -26,7 +27,7 @@ const marks = where === 'browse' || where === 'post';
 const { thing, lane, month } = scope;
 // An address is /<project>/<month>/<kind>, each part optional; none at all is /everything.
 const at = (t?: string, m?: string, l?: string) => `${t ? `/${t}` : ''}${m ? `/${m}` : ''}${l ? `/${l}` : ''}` || '/everything';
-const colorOf = (id: string) => (id === MISC ? 'var(--misc)' : things.find((t) => t.id === id)?.data.color || '');
+const hueOf = (id: string) => (id === MISC ? MISC_HUE : hues.get(id));
 const kinds = kindsPresent(scoped);
 const projects = [...things.map((t) => ({ id: t.id, name: t.data.name })), { id: MISC, name: 'misc' }];
 ---
@@ -37,31 +38,30 @@ const projects = [...things.map((t) => ({ id: t.id, name: t.data.name })), { id:
 
 <nav class="rows">
   <div class="row">
-    <span class="k small">project</span>
+    <span class="k">project</span>
     <span class="items">
       <a href={at(undefined, month, lane)} class:list={[{ on: marks && !thing }]}>all</a>
       {
-        projects.map((p) => (
-          <a
-            href={at(p.id, month, lane)}
-            class:list={[{ on: marks && thing === p.id, tint: marks && thing === p.id && !!colorOf(p.id) }]}
-            style={marks && thing === p.id && colorOf(p.id) ? `--c: ${colorOf(p.id)}` : undefined}
-          >
-            {p.name}
-          </a>
-        ))
+        projects.map((p) => {
+          const on = marks && thing === p.id;
+          return (
+            <a href={at(p.id, month, lane)} class:list={[{ on, proj: on && !!hueOf(p.id) }]} style={on ? hueStyle(hueOf(p.id)) : undefined}>
+              {p.name}
+            </a>
+          );
+        })
       }
     </span>
   </div>
   <div class="row">
-    <span class="k small">kind</span>
+    <span class="k">kind</span>
     <span class="items">
       <a href={at(thing, month)} class:list={[{ on: marks && !lane }]}>all</a>
       {kinds.map((l) => <a href={at(thing, month, l)} class:list={[{ on: marks && lane === l }]}>{l}</a>)}
     </span>
   </div>
   <div class="row">
-    <span class="k small">when</span>
+    <span class="k">when</span>
     <span class="items">
       <a href={at(thing, undefined, lane)} class:list={[{ on: marks && !month }]}>all</a>
       {
@@ -78,51 +78,56 @@ const projects = [...things.map((t) => ({ id: t.id, name: t.data.name })), { id:
       }
     </span>
   </div>
-  <div class="foot small">
-    <a href="/about" class:list={['about', { on: where === 'about' }]}>about</a>
+  <div class="foot">
+    <a href="/about" class="about">about</a>
     <a href="/rss.xml">rss</a>
     <button type="button" class="theme-toggle" aria-label="Switch between light and dark">dark</button>
   </div>
 </nav>
 
+<slot />
+
 <style>
   .logo-row {
-    padding: 18px var(--page-pad);
+    padding: 18px 20px;
     line-height: 22px;
     border-bottom: 1px solid var(--line);
     display: flex;
     align-items: center;
+    gap: 10px;
+    font-size: 18px;
   }
-  .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); font-size: 18px; }
+  .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+  .brand:hover { color: var(--ink); }
   .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); flex: none; }
 
-  .rows { display: flex; flex-direction: column; flex: 1 1 auto; font-size: 17px; }
+  .rows { display: flex; flex-direction: column; font-size: 17px; }
   .row {
-    display: grid;
-    grid-template-columns: 80px minmax(0, 1fr);
-    align-items: baseline;
-    padding: 16px var(--page-pad);
+    padding: 16px 20px;
     border-bottom: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    align-items: baseline;
   }
-  .k { color: var(--quiet); }
+  .k { font-size: 13px; color: var(--quiet); }
   .items { display: flex; flex-wrap: wrap; gap: 8px 18px; }
   .items a { color: var(--ink); text-decoration: none; text-underline-offset: 4px; }
   .items a:hover { color: var(--ink-2); }
   .items a.on { text-decoration: underline; }
-  .items a.tint { color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
+  .items a.proj { color: var(--pc); }
 
-  .foot { flex: 1 1 auto; display: flex; gap: 18px; align-items: flex-start; padding: 14px var(--page-pad); }
+  .foot { padding: 14px 20px; display: flex; gap: 18px; font-size: 13px; align-items: flex-start; }
   .foot a, .theme-toggle { color: var(--ink-2); text-decoration: none; }
   .foot .about { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
-  .foot a:hover, .theme-toggle:hover { color: var(--ink); }
+  .foot a:hover, .theme-toggle:hover { color: var(--ink-2); }
   .theme-toggle { font: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 
   /* the sheet on narrow screens: 44px tap targets */
   @media (max-width: 1199px) {
     .logo-row { display: none; }
-    .row { padding: 4px var(--page-pad); grid-template-columns: 72px minmax(0, 1fr); }
+    .row { padding: 4px 16px; grid-template-columns: 72px minmax(0, 1fr); }
     .k { line-height: 44px; }
     .items { gap: 0 20px; line-height: 44px; }
-    .foot { flex: none; padding: 4px var(--page-pad); gap: 24px; font-size: 15px; line-height: 44px; }
+    .foot { padding: 4px 16px; gap: 24px; font-size: 15px; line-height: 44px; }
   }
 </style>

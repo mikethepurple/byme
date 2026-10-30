@@ -11,6 +11,7 @@ export interface Like {
   kind: Kind;
   title: string;
   plain: string;
+  images: number;
 }
 
 /** The pseudo-project of posts that belong to none. */
@@ -30,14 +31,29 @@ export interface LedgerRow {
   date: string;
 }
 
-/** The latest n posts as rows of kind · title · date; blank rows pad to n. */
+/** What a post is called: its title, else "2 photos", "Photo", or its first words. */
+export function titleOf(p: Pick<Like, 'title' | 'kind' | 'plain' | 'images'>, max = 60): string {
+  if (p.title) return p.title;
+  if (p.kind === 'set') return `${p.images} photos`;
+  if (p.kind === 'photo') return 'Photo';
+  return excerpt(p.plain.split('\n')[0] ?? '', max) || KIND_LABEL[p.kind];
+}
+
+/**
+ * The latest posts as rows of kind · title · date, at most n, never two rows
+ * that read the same; blank rows pad to n.
+ */
 export function ledger(posts: Like[], n: number): LedgerRow[] {
-  const rows: LedgerRow[] = posts.slice(0, n).map((p) => ({
-    id: p.id,
-    kind: KIND_LABEL[p.kind],
-    title: p.title || excerpt(p.plain.split('\n')[0] ?? '', 60),
-    date: formatShort(p.date).split(',')[0],
-  }));
+  const rows: LedgerRow[] = [];
+  const seen = new Set<string>();
+  for (const p of posts) {
+    if (rows.length >= n) break;
+    const row = { id: p.id, kind: KIND_LABEL[p.kind], title: titleOf(p), date: formatShort(p.date).split(',')[0] };
+    const key = `${row.kind}|${row.title}|${row.date}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    rows.push(row);
+  }
   while (rows.length < n) rows.push({ id: '', kind: '', title: '', date: '' });
   return rows;
 }

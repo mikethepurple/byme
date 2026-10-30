@@ -5,26 +5,26 @@ import TwoPane from '../layouts/TwoPane.astro';
 import Nav from '../components/Nav.astro';
 import Grid from '../components/Grid.astro';
 import { projectOf } from '../lib/related';
-import { loadPosts, loadThings, thingNames, thingColors, PAGE_SIZE } from '../lib/load';
+import { loadPosts, loadThings, thingNames, thingHues, PAGE_SIZE } from '../lib/load';
 
 export const prerender = true;
 
 const things = await loadThings();
 const posts = await loadPosts();
 const names = thingNames(things);
-const colors = thingColors(things);
+const hues = thingHues(things);
 const byThing = new Map(things.map((t) => [t.id, posts.filter((p) => projectOf(p) === t.id)]));
 ---
 
 <TwoPane title="by.erikov.me">
   <Fragment slot="content">
-    <Grid things={things} byThing={byThing} posts={posts.slice(0, PAGE_SIZE)} names={names} colors={colors} />
-    {posts.length > PAGE_SIZE && <nav class="pages small"><a href="/page/2">older →</a></nav>}
+    <Grid things={things} byThing={byThing} posts={posts.slice(0, PAGE_SIZE)} names={names} hues={hues} />
+    {posts.length > PAGE_SIZE && <nav class="pages"><a href="/page/2">older →</a></nav>}
   </Fragment>
-  <Nav slot="side" things={things} posts={posts} where="front" />
+  <Nav slot="side" things={things} posts={posts} hues={hues} where="front" />
 </TwoPane>
 
 <style>
-  .pages { padding: 14px var(--page-pad); }
+  .pages { padding: 14px 20px; font-size: 13px; }
   .pages a { text-decoration: none; }
 </style>

@@ -1,14 +1,15 @@
 import { describe, it, expect } from 'vitest';
-import { projectOf, ledger, readMinutes, dateRange, excerpt, kindsPresent, padTo, MISC, type Like } from './related';
+import { projectOf, ledger, titleOf, readMinutes, dateRange, excerpt, kindsPresent, padTo, MISC, type Like } from './related';
 
-const post = (id: string, when: string, things: string[] = [], kind: Like['kind'] = 'note', title = ''): Like => ({
+const post = (id: string, when: string, things: string[] = [], kind: Like['kind'] = 'note', title = '', plain = '', images = 0): Like => ({
   id,
   when: new Date(when),
   date: when,
   things,
   kind,
   title,
-  plain: '',
+  plain,
+  images: images || (kind === 'photo' ? 1 : kind === 'set' ? 2 : 0),
 });
 
 // newest first, as loadPosts() returns them
@@ -32,12 +33,37 @@ describe('ledger — the latest posts of a project, always n rows', () => {
     const rows = ledger(posts.filter((p) => projectOf(p) === 'ada'), 4);
     expect(rows).toHaveLength(4);
     expect(rows[0]).toMatchObject({ kind: 'Note', title: 'Test from curl' });
-    expect(rows[1]).toMatchObject({ kind: 'Photo', title: '' });
+    expect(rows[1]).toMatchObject({ kind: 'Photo', title: 'Photo' });
     expect(rows[2]).toEqual({ kind: '', title: '', date: '', id: '' });
     expect(rows[3]).toEqual({ kind: '', title: '', date: '', id: '' });
   });
   it('cuts at n', () => {
     expect(ledger(posts, 2)).toHaveLength(2);
+  });
+  it('a row title is never empty: "2 photos" for a set, "Photo" for a photo, the first words for a note', () => {
+    const rows = ledger(
+      [
+        post('s', '2026-10-30T04:08:00+09:00', ['detourist'], 'set', '', '', 3),
+        post('f', '2026-10-29T19:11:00+01:00', ['ada'], 'photo'),
+        post('n', '2026-10-27T09:05:00+01:00', [], 'note', '', 'Hey folks, how are you.\nSecond line.'),
+      ],
+      3,
+    );
+    expect(rows.map((r) => r.title)).toEqual(['3 photos', 'Photo', 'Hey folks, how are you.']);
+  });
+  it('never shows the same row twice', () => {
+    const twin = (id: string, when: string) => post(id, when, ['ada'], 'note', 'Test from curl');
+    const rows = ledger([twin('a', '2026-10-29T20:08:00+01:00'), twin('b', '2026-10-29T20:06:00+01:00'), post('c', '2026-10-28T20:06:00+01:00', ['ada'], 'note', 'Other')], 4);
+    expect(rows.filter((r) => r.id).map((r) => r.title)).toEqual(['Test from curl', 'Other']);
+  });
+});
+
+describe('titleOf — what a post is called when it has no title', () => {
+  it('title, else by kind', () => {
+    expect(titleOf(post('t', '2026-10-30T04:08:00+09:00', [], 'note', 'Named'))).toBe('Named');
+    expect(titleOf(post('s', '2026-10-30T04:08:00+09:00', [], 'set', '', '', 2))).toBe('2 photos');
+    expect(titleOf(post('f', '2026-10-30T04:08:00+09:00', [], 'photo'))).toBe('Photo');
+    expect(titleOf(post('n', '2026-10-30T04:08:00+09:00', [], 'note', '', 'Hey folks, how are you.'))).toBe('Hey folks, how are you.');
   });
 });
 

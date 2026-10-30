@@ -1,26 +1,31 @@
 ---
-// About, per the hand-over: the project page template with the strip in the
-// dot's colour. The text is a placeholder until Misha writes it.
+// About, per the hand-over v2 (§7): the project page template with the strip
+// in the dot's colour; a head with the name, a short bio and a link; then a
+// grid of blocks — the projects. The bio is a placeholder until Misha writes it.
 import TwoPane from '../layouts/TwoPane.astro';
 import Nav from '../components/Nav.astro';
 import Head from '../components/Head.astro';
-import { loadPosts, loadThings } from '../lib/load';
+import Grid from '../components/Grid.astro';
+import { projectOf } from '../lib/related';
+import { loadPosts, loadThings, thingNames, thingHues } from '../lib/load';
 
 export const prerender = true;
 
 const things = await loadThings();
 const posts = await loadPosts();
+const names = thingNames(things);
+const hues = thingHues(things);
+const byThing = new Map(things.map((t) => [t.id, posts.filter((p) => projectOf(p) === t.id)]));
 ---
 
-<TwoPane title="About" strip="#f0a020" filterLabel="filter">
-  <Head slot="head" left={[{ text: 'About' }]} title="Misha Erikov" description="Things I make, dropped here as they happen." />
-  <div slot="content" class="about">
-    <p>This page is a placeholder. The text is mine to write.</p>
-  </div>
-  <Nav slot="side" things={things} posts={posts} where="about" />
+<TwoPane title="About" hue={{ c: '#f0a020', cd: '#f0a020' }}>
+  <Head
+    slot="head"
+    left={[{ text: 'About' }]}
+    title="Misha Erikov"
+    description="Things I make, dropped here as they happen. This line is a placeholder; the bio is mine to write."
+    link={{ label: 'erikov@hey.com', url: 'mailto:erikov@hey.com' }}
+  />
+  <Grid slot="content" things={things} byThing={byThing} posts={[]} names={names} hues={hues} />
+  <Nav slot="side" things={things} posts={posts} hues={hues} where="about" />
 </TwoPane>
-
-<style>
-  .about { padding: 28px var(--page-pad) 40px; font-size: 19px; line-height: 1.6; }
-  .about p { max-width: var(--read); margin: 0 0 18px; color: var(--ink-2); }
-</style>

@@ -1,27 +1,29 @@
 ---
-// The shell, per the hand-over. From 1200px: the content on the left, the
-// 400px menu on the right. A page with a head (a project, a post, about) puts
-// the head and the menu on one grid row, so their hairlines meet, and the
-// grid under the head; the right column continues empty below the menu.
-// Under 1200px: a top bar (logo · about · filter); "filter" opens the menu as
-// a full-screen sheet, by address (#filter), so no script is needed.
+// The shell, per the hand-over (FIXES.md §5). The whole page scrolls as one
+// document. From 1200px: the content on the left, the 400px menu on the right;
+// the menu spans both grid rows and is the only sticky element. A page with a
+// head puts the head in the first row (min-height 280px, so its top line meets
+// the logo row) and the grid under it. Under 1200px: a sticky top bar (logo ·
+// about · filter); "filter" opens the menu as a full-screen sheet with its own
+// scroll, by address (#filter); the body is locked while it is open.
 import Base from './Base.astro';
+import { hueStyle, type Hue } from '../lib/load';
 
 interface Props {
   title: string;
   description?: string;
   image?: string;
   type?: 'website' | 'article';
-  strip?: string; // a 6px top border in this colour (a project's, misc, about)
+  hue?: Hue; // the 6px strip (a project's colour, misc gray, about amber)
   filterLabel?: string; // the top bar's "filter" link, e.g. "filter: Ada"
 }
 
-const { title, description, image, type, strip, filterLabel = 'filter' } = Astro.props;
+const { title, description, image, type, hue, filterLabel = 'filter' } = Astro.props;
 const hasHead = Astro.slots.has('head');
 ---
 
 <Base title={title} description={description} image={image} type={type}>
-  <div class:list={['shell', { headed: hasHead }]} style={strip ? `--strip: ${strip}` : undefined}>
+  <div class:list={['shell', 'proj', { headed: hasHead, striped: !!hue }]} style={hueStyle(hue)}>
     <header class="bar">
       <a href="/" class="brand"><span class="dot"></span>by.erikov.me</a>
       <a href="/about" class="about">about</a>
@@ -38,43 +40,53 @@ const hasHead = Astro.slots.has('head');
     <main class="content">
       <slot name="content" />
     </main>
-    {hasHead && <div class="side-rest"></div>}
   </div>
 </Base>
 
 <style>
   .shell {
-    min-height: 100dvh;
-    border-top: 6px solid var(--strip, transparent);
+    min-height: 100vh;
     display: grid;
     grid-template-columns: minmax(0, 1fr) 400px;
     grid-template-rows: auto 1fr;
-    grid-template-areas:
-      'head menu'
-      'content rest';
   }
-  .shell:not(.headed) {
-    grid-template-rows: 1fr;
-    grid-template-areas: 'content menu';
-  }
+  .shell.striped { border-top: 6px solid var(--pc); }
 
   .bar { display: none; }
-  .head { grid-area: head; border-bottom: 1px solid var(--line); min-width: 0; }
-  .menu { grid-area: menu; border-left: 1px solid var(--line); display: flex; flex-direction: column; min-width: 0; }
-  .content { grid-area: content; min-width: 0; container: pane / inline-size; }
-  .side-rest { grid-area: rest; border-left: 1px solid var(--line); }
+  .head {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 280px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .menu {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    align-self: start;
+    overflow-y: auto;
+    border-left: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .content { grid-column: 1; grid-row: 2; min-width: 0; }
+  .shell:not(.headed) .content { grid-row: 1 / -1; }
 
   .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); font-size: 18px; }
+  .brand:hover { color: var(--ink); }
   .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); flex: none; }
   .sheet-bar { display: none; }
   .filter { font-size: 17px; color: var(--ink); padding: 12px 0; text-decoration: underline; text-underline-offset: 4px; }
   .about { font-size: 17px; color: var(--ink-2); text-decoration: none; margin-left: auto; margin-right: 20px; padding: 12px 0; }
 
   @media (max-width: 1199px) {
-    .shell, .shell:not(.headed) {
-      display: flex;
-      flex-direction: column;
-    }
+    .shell, .shell:not(.headed) { display: flex; flex-direction: column; }
     .bar {
       display: flex;
       align-items: center;
@@ -82,18 +94,26 @@ const hasHead = Astro.slots.has('head');
       flex: none;
       padding: 0 var(--page-pad);
       border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: var(--bg);
     }
-    .side-rest { display: none; }
+    .head { min-height: 0; }
     .menu {
       display: none;
       position: fixed;
       inset: 0;
       z-index: 10;
+      height: 100vh;
+      height: 100dvh;
+      align-self: auto;
       background: var(--bg);
       border-left: 0;
       overflow-y: auto;
     }
     .menu:target { display: flex; }
+    :global(html:has(#filter:target)) { overflow: hidden; }
     .sheet-bar {
       display: flex;
       align-items: center;

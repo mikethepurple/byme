@@ -1,20 +1,20 @@
 ---
-// One cell of the grid, per the hand-over: a project card or a post. Every
-// cell is the same height.
+// One cell of the grid, the hand-over's Cell: a project card or a post, 380px
+// tall, every value as in the HTML.
 //
-// A project card: "Project" and the index in the project's colour; a ledger —
-// an ink rule, always four rows (kind | title | date), blank rows as hairlines,
-// a footer "{n} posts · all →" in the colour; then the name, a description
-// with room for two lines, and a link row that is always 30px tall, so the
-// names line up across the row. The name is the inward link, stretched over
-// the card; the ↗ link is separate and sits above it. No nested anchors.
+// Project: "Project" and the index in the project's colour; a ledger — an ink
+// rule, always four rows (kind | title | date), blank rows as hairlines, a
+// footer "{n} posts · all →" in the colour; the name (56/600), a description
+// with room for two lines, a link row that is always 30px. The name is the
+// inward link, stretched over the card; the ↗ link is separate and above it.
+// A heavier line under the card sets the project row apart (FIXES.md §6, 9d).
 //
-// A post: "Kind · Project" (misc in gray), the date on the right; a picture,
-// or the title and an excerpt — never the whole article.
+// Post: "Kind · Project" (misc in gray), the date on the right; a picture, or
+// the title (20/500) and an excerpt of about 300 characters.
 import { Image } from 'astro:assets';
 import { formatShort, laneOf } from '../lib/posts';
-import { KIND_LABEL, MISC, excerpt, ledger, projectOf } from '../lib/related';
-import type { Post, Thing } from '../lib/load';
+import { KIND_LABEL, MISC, excerpt, ledger, projectOf, titleOf } from '../lib/related';
+import { MISC_HUE, hueStyle, type Hue, type Post, type Thing } from '../lib/load';
 
 interface Props {
   thing?: Thing;
@@ -22,27 +22,27 @@ interface Props {
   theirs?: Post[]; // the project's posts, newest first
   post?: Post;
   names?: Map<string, string>;
-  colors?: Map<string, string>; // thing id → its colour
+  hues?: Map<string, Hue>;
   showProject?: boolean; // off on a project page
 }
 
-const { thing, index = 0, theirs = [], post, names = new Map(), colors = new Map(), showProject = true } = Astro.props;
+const { thing, index = 0, theirs = [], post, names = new Map(), hues = new Map(), showProject = true } = Astro.props;
 
-const color = thing ? thing.data.color || 'var(--quiet)' : '';
+const thingHue: Hue | undefined = thing ? (thing.data.color ? { c: thing.data.color, cd: thing.data.colorDark || thing.data.color } : MISC_HUE) : undefined;
 const rows = thing ? ledger(theirs, 4) : [];
 const count = theirs.length;
 
 const imgs = post?.data.images ?? [];
 const proj = post ? projectOf(post) : '';
 const projName = proj === MISC ? 'misc' : (names.get(proj) ?? proj);
-const projColor = proj === MISC ? 'var(--misc)' : colors.get(proj) || '';
+const projHue = proj === MISC ? MISC_HUE : hues.get(proj);
 const postText = post ? excerpt(post.plain, 300) : '';
-const aria = post ? post.title || excerpt(post.plain.split('\n')[0] ?? '', 80) || `${KIND_LABEL[post.kind]}, ${formatShort(post.data.date)}` : '';
+const aria = post ? `${titleOf(post, 80)}, ${formatShort(post.data.date)}` : '';
 ---
 
 {
   thing && (
-    <article class="cell project" style={`--c: ${color}`}>
+    <article class="cell project proj" style={hueStyle(thingHue)}>
       <div class="label-row">
         <span>Project</span>
         <span class="c">{String(index).padStart(2, '0')}</span>
@@ -85,7 +85,7 @@ const aria = post ? post.title || excerpt(post.plain.split('\n')[0] ?? '', 80) |
           {showProject && (
             <>
               {' · '}
-              <a href={`/${proj}`} class="who" style={projColor ? `color: color-mix(in oklab, ${projColor} var(--tint-mix), #000)` : undefined}>
+              <a href={`/${proj}`} class="who proj" style={hueStyle(projHue)}>
                 {projName}
               </a>
             </>
@@ -95,7 +95,7 @@ const aria = post ? post.title || excerpt(post.plain.split('\n')[0] ?? '', 80) |
       </div>
       {imgs.length > 0 && (
         <div class="pic">
-          <Image src={imgs[0]} alt={post.title || (post.kind === 'set' ? `${imgs.length} pictures` : 'Picture')} widths={[480, 960]} sizes="(max-width: 699px) 100vw, (max-width: 1199px) 50vw, 30vw" loading="lazy" />
+          <Image src={imgs[0]} alt={titleOf(post, 80)} widths={[480, 960]} sizes="(max-width: 699px) 100vw, (max-width: 1199px) 50vw, 30vw" loading="lazy" />
         </div>
       )}
       {imgs.length === 0 && (
@@ -117,7 +117,7 @@ const aria = post ? post.title || excerpt(post.plain.split('\n')[0] ?? '', 80) |
     box-sizing: border-box;
     min-width: 0;
     overflow: hidden;
-    padding: 18px var(--page-pad);
+    padding: 18px 20px;
     border-right: 1px solid var(--line);
     border-bottom: 1px solid var(--line);
     background: var(--bg);
@@ -125,19 +125,20 @@ const aria = post ? post.title || excerpt(post.plain.split('\n')[0] ?? '', 80) |
     display: flex;
     flex-direction: column;
   }
+  .label-row { font-size: 13px; }
   .label-row a { color: inherit; text-decoration: none; position: relative; z-index: 1; }
-  .label-row a:hover { text-decoration: underline; text-underline-offset: 3px; }
-  .c { color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
+  .label-row a:hover { color: var(--ink-2); }
+  .c, .who { color: var(--pc); }
+  .quiet { color: var(--quiet); }
 
   /* the project card */
+  .project { border-bottom-color: var(--line-strong); }
   .ledger { display: flex; flex-direction: column; margin-top: 14px; border-top: 1px solid var(--ink); }
   .lrow {
     display: grid;
     grid-template-columns: 64px minmax(0, 1fr) auto;
     gap: 10px;
     padding: 7px 0;
-    height: 30px;
-    box-sizing: border-box;
     border-bottom: 1px solid var(--line);
     font-size: 13px;
     line-height: 16px;
@@ -154,17 +155,18 @@ const aria = post ? post.title || excerpt(post.plain.split('\n')[0] ?? '', 80) |
     text-decoration: none;
   }
   .name::after { content: ''; position: absolute; inset: 0; }
-  .project:hover .name { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; text-decoration-color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
+  .project:hover .name { color: var(--ink-2); }
   .desc { margin: 14px 0 0; font-size: 15px; line-height: 1.4; color: var(--ink-2); max-width: 270px; min-height: 42px; }
   .linkrow { height: 30px; display: flex; align-items: flex-end; }
-  .ext { position: relative; z-index: 1; font-size: 15px; color: var(--ink); text-decoration-color: var(--ink-3); }
+  .ext { position: relative; z-index: 1; font-size: 15px; color: var(--ink); }
+  .ext:hover { color: var(--ink-2); }
 
   /* a post */
   .post { gap: 12px; }
   .pic { flex: 1 1 auto; min-height: 0; }
   .pic :global(img) { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .title { font-size: 20px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.2; }
+  .title { font-size: 20px; font-weight: 500; letter-spacing: -0.02em; }
   .text { font-size: 15px; color: var(--ink-2); line-height: 1.45; }
   .open { position: absolute; inset: 0; }
-  .post:hover .title { text-decoration: underline; text-underline-offset: 4px; }
+  .post:hover .title { color: var(--ink-2); }
 </style>

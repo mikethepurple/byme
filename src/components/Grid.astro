@@ -5,19 +5,19 @@
 // below the content the column lines continue to the bottom of the pane.
 import Cell from './Cell.astro';
 import { padTo } from '../lib/related';
-import type { Post, Thing } from '../lib/load';
+import type { Hue, Post, Thing } from '../lib/load';
 
 interface Props {
   things?: Thing[]; // the projects, first, on the front
   byThing?: Map<string, Post[]>; // each project's posts, for the ledgers
   posts: Post[];
   names: Map<string, string>;
-  colors?: Map<string, string>;
+  hues?: Map<string, Hue>;
   showProject?: boolean;
   message?: string; // instead of an empty grid, e.g. "Nothing here yet."
 }
 
-const { things = [], byThing = new Map(), posts, names, colors = new Map(), showProject = true, message = 'Nothing here yet.' } = Astro.props;
+const { things = [], byThing = new Map(), posts, names, hues = new Map(), showProject = true, message = 'Nothing here yet.' } = Astro.props;
 const count = things.length + posts.length;
 const for3 = count === 0 ? 2 : padTo(count, 3);
 const for2 = count === 0 ? 1 : padTo(count, 2);
@@ -25,7 +25,7 @@ const for2 = count === 0 ? 1 : padTo(count, 2);
 
 <div class="grid">
   {things.map((thing, i) => <Cell thing={thing} index={i + 1} theirs={byThing.get(thing.id) ?? []} />)}
-  {posts.map((post) => <Cell post={post} names={names} colors={colors} showProject={showProject} />)}
+  {posts.map((post) => <Cell post={post} names={names} hues={hues} showProject={showProject} />)}
   {count === 0 && <div class="msg quiet">{message}</div>}
   {Array.from({ length: for3 }).map(() => <div class="cell empty for3" aria-hidden="true" />)}
   {Array.from({ length: for2 }).map(() => <div class="cell empty for2" aria-hidden="true" />)}
@@ -46,7 +46,7 @@ const for2 = count === 0 ? 1 : padTo(count, 2);
   }
   .for2 { display: none; }
   .msg {
-    padding: 18px var(--page-pad);
+    padding: 18px 20px;
     border-right: 1px solid var(--line);
     border-bottom: 1px solid var(--line);
     font-size: 15px;

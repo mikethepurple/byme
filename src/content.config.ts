@@ -10,7 +10,8 @@ const things = defineCollection({
       line: z.string().default(''),
       order: z.number().default(99),
       try: z.array(z.object({ label: z.string(), url: z.string().url() })).default([]),
-      color: z.string().default(''), // the project's colour in cells and the nav, e.g. #ffb424
+      color: z.string().default(''), // the project's colour on paper, exact, e.g. #a8760e
+      colorDark: z.string().default(''), // the brighter one for dark, e.g. #ffb424
       cover: image().optional(),
       screenshots: z.array(image()).default([]),
     }),

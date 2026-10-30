@@ -1,6 +1,7 @@
 name: Manga
 line: Pages from my drawing practice.
-color: '#a78bfa'
+color: '#4f46a5'
+colorDark: '#a78bfa'
 order: 3
 try: []
 screenshots: []

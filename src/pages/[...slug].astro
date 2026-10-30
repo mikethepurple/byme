@@ -1,26 +1,29 @@
 ---
 // Every address but the front and about. Browsing (everything, a project,
 // misc, a kind, a month, a page): a head when a project or misc is in force,
-// then the grid. Reading: the post's head, then the post.
+// then the grid. Reading: the post's head, then the post; "More in {project}"
+// in the menu column on desktop, after the article under 1200px.
 import TwoPane from '../layouts/TwoPane.astro';
 import Nav from '../components/Nav.astro';
 import Grid from '../components/Grid.astro';
 import Head from '../components/Head.astro';
+import More from '../components/More.astro';
 import PostView from '../components/Post.astro';
-import { KIND_LABEL, MISC, dateRange, excerpt, projectOf, readMinutes } from '../lib/related';
-import { formatDate, formatShort, laneOf } from '../lib/posts';
+import { KIND_LABEL, MISC, dateRange, excerpt, projectOf, readMinutes, titleOf } from '../lib/related';
+import { formatDate } from '../lib/posts';
 import {
   loadPosts,
   loadThings,
   thingNames,
-  thingColors,
+  thingHues,
   scopePosts,
   scopeLabel,
   monthsOf,
   yearsOf,
-  firstLine,
   LANES,
   PAGE_SIZE,
+  MISC_HUE,
+  type Hue,
   type Post,
   type Scope,
 } from '../lib/load';
@@ -64,11 +67,11 @@ const props = Astro.props as Props;
 const things = await loadThings();
 const posts = await loadPosts();
 const names = thingNames(things);
-const colors = thingColors(things);
+const hues = thingHues(things);
 
 const ofProject = (id: string) => posts.filter((p) => projectOf(p) === id);
 const nameOf = (id: string) => (id === MISC ? 'Misc' : (names.get(id) ?? id));
-const colorOf = (id: string) => (id === MISC ? 'var(--misc)' : colors.get(id) || '');
+const hueOf = (id: string): Hue | undefined => (id === MISC ? MISC_HUE : hues.get(id));
 const kindsLine = (ps: Post[]) => {
   const n: Record<string, number> = {};
   for (const p of ps) n[p.kind] = (n[p.kind] ?? 0) + 1;
@@ -86,7 +89,7 @@ let scoped: Post[] = posts;
 let feed: Post[] = [];
 let older: string | undefined;
 let newer: string | undefined;
-let strip: string | undefined;
+let hue: Hue | undefined;
 let filterLabel = 'filter';
 
 if (props.type === 'browse') {
@@ -104,7 +107,7 @@ if (props.type === 'browse') {
     older = scoped.length > PAGE_SIZE ? `/page/2` : undefined;
   }
   if (props.thing) {
-    strip = colorOf(props.thing);
+    hue = hueOf(props.thing);
     filterLabel = `filter: ${nameOf(props.thing)}`;
     const t = things.find((x) => x.id === props.thing);
     description = props.thing === MISC ? "Posts that don't belong to a project." : t?.data.line || undefined;
@@ -114,12 +117,12 @@ if (props.type === 'browse') {
   }
 } else {
   const p = props.post;
-  title = p.title || firstLine(p.plain) || `${KIND_LABEL[p.kind]} · ${formatDate(p.data.date)}`;
+  title = titleOf(p, 80);
   description = p.text ? excerpt(p.plain, 160) : undefined;
   image = p.data.images[0]?.src;
   const proj = projectOf(p);
   scope = { thing: proj };
-  strip = colorOf(proj);
+  hue = hueOf(proj);
   filterLabel = `filter: ${nameOf(proj)}`;
 }
 
@@ -132,13 +135,13 @@ const thingTry = headThing && headThing !== MISC ? things.find((t) => t.id === h
 const post = props.type === 'read' ? props.post : undefined;
 const postProj = post ? projectOf(post) : '';
 const postMore = post ? ofProject(postProj).filter((x) => x.id !== post.id) : [];
-const postUntitled = post ? !post.title : false;
 // An untitled post whose whole text is one short line: that line is its title, and nothing repeats below.
-const postLead = post && postUntitled && !post.plain.includes('\n') && post.plain.length <= 140 ? post.plain : '';
+const postLead = post && !post.title && post.plain && !post.plain.includes('\n') && post.plain.length <= 140 ? post.plain : '';
+const postTitle = post ? postLead || post.title || (post.plain ? titleOf(post, 80) : undefined) : undefined;
 const offset = post?.data.date.match(/(Z|[+-]\d\d:?\d\d)$/)?.[1];
 ---
 
-<TwoPane title={title} description={description} image={image} type={props.type === 'read' ? 'article' : 'website'} strip={strip} filterLabel={filterLabel}>
+<TwoPane title={title} description={description} image={image} type={props.type === 'read' ? 'article' : 'website'} hue={hue} filterLabel={filterLabel}>
   {
     headThing && (
       <Head
@@ -148,7 +151,7 @@ const offset = post?.data.date.match(/(Z|[+-]\d\d:?\d\d)$/)?.[1];
           { text: theirs.length ? `${theirs.length} post${theirs.length > 1 ? 's' : ''}` : 'No posts yet', quiet: true },
           ...(theirs.length ? [{ text: kindsLine(theirs), quiet: true }, { text: dateRange(theirs), quiet: true }] : []),
         ]}
-        right={thingIndex ? { text: String(thingIndex).padStart(2, '0'), color: colorOf(headThing) } : undefined}
+        right={thingIndex ? { text: String(thingIndex).padStart(2, '0'), hue: hueOf(headThing) } : undefined}
         title={nameOf(headThing)}
         description={description}
         link={thingTry ? { label: thingTry.label, url: thingTry.url } : undefined}
@@ -162,11 +165,11 @@ const offset = post?.data.date.match(/(Z|[+-]\d\d:?\d\d)$/)?.[1];
         slot="head"
         left={[
           { text: KIND_LABEL[post.kind] },
-          { text: nameOf(postProj), href: `/${postProj}`, color: colorOf(postProj) },
+          { text: nameOf(postProj), href: `/${postProj}`, hue: hueOf(postProj) },
           ...(post.kind === 'longread' ? [{ text: `${readMinutes(post.plain)} min read`, quiet: true }] : []),
         ]}
         right={{ text: `${formatDate(post.data.date)}${offset ? ` UTC${offset === 'Z' ? '' : offset}` : ''}` }}
-        title={postLead || post.title || (post.plain ? firstLine(post.plain) : undefined)}
+        title={postTitle}
         size="post"
         transitionName={`post-${post.id}`}
       />
@@ -176,9 +179,9 @@ const offset = post?.data.date.match(/(Z|[+-]\d\d:?\d\d)$/)?.[1];
     {
       props.type === 'browse' && (
         <>
-          <Grid posts={feed} names={names} colors={colors} showProject={!headThing} />
+          <Grid posts={feed} names={names} hues={hues} showProject={!headThing} />
           {(older || newer) && (
-            <nav class="pages small">
+            <nav class="pages">
               {newer && <a href={newer}>← newer</a>}
               {older && <a href={older}>older →</a>}
             </nav>
@@ -188,23 +191,34 @@ const offset = post?.data.date.match(/(Z|[+-]\d\d:?\d\d)$/)?.[1];
     }
     {
       post && (
-        <PostView
-          post={postLead ? { ...post, text: '' } as Post : post}
-          more={postMore}
-          moreHref={`/${postProj}`}
-          moreCount={postMore.length}
-          projName={nameOf(postProj)}
-          projColor={colorOf(postProj)}
-          newer={props.type === 'read' ? props.prev : undefined}
-          older={props.type === 'read' ? props.next : undefined}
-        />
+        <>
+          <PostView post={postLead ? ({ ...post, text: '' } as Post) : post} newer={props.type === 'read' ? props.prev : undefined} older={props.type === 'read' ? props.next : undefined} />
+          {!post.data.images.length && (
+            <div class="more-narrow">
+              <More more={postMore} href={`/${postProj}`} projName={nameOf(postProj)} hue={hueOf(postProj)} newer={props.type === 'read' ? props.prev : undefined} older={props.type === 'read' ? props.next : undefined} />
+            </div>
+          )}
+        </>
       )
     }
   </Fragment>
-  <Nav slot="side" things={things} posts={posts} scoped={headThing ? theirs : props.type === 'read' ? posts : scoped} scope={scope} where={props.type === 'read' ? 'post' : 'browse'} />
+  <Nav slot="side" things={things} posts={posts} scoped={headThing ? theirs : props.type === 'read' ? posts : scoped} scope={scope} hues={hues} where={props.type === 'read' ? 'post' : 'browse'}>
+    {
+      post && !post.data.images.length && (
+        <div class="more-wide">
+          <More more={postMore} href={`/${postProj}`} projName={nameOf(postProj)} hue={hueOf(postProj)} newer={props.type === 'read' ? props.prev : undefined} older={props.type === 'read' ? props.next : undefined} />
+        </div>
+      )
+    }
+  </Nav>
 </TwoPane>
 
 <style>
-  .pages { display: flex; justify-content: space-between; padding: 14px var(--page-pad); }
+  .pages { display: flex; justify-content: space-between; padding: 14px 20px; font-size: 13px; }
   .pages a { text-decoration: none; }
+  .more-narrow { display: none; }
+  @media (max-width: 1199px) {
+    .more-wide { display: none; }
+    .more-narrow { display: block; }
+  }
 </style>

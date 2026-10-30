@@ -3,7 +3,7 @@ import { kindOf, parseDate, laneOf, plain, type Kind } from './posts';
 
 // `things` (ids), `date`, `title` and `plain` are lifted out so a Post satisfies
 // the `Like` shape the pure helpers in related.ts work on.
-export type Post = CollectionEntry<'posts'> & { kind: Kind; when: Date; date: string; title: string; text: string; plain: string; things: string[] };
+export type Post = CollectionEntry<'posts'> & { kind: Kind; when: Date; date: string; title: string; text: string; plain: string; things: string[]; images: number };
 export type Thing = CollectionEntry<'things'>;
 
 export const LANES = ['photos', 'sets', 'longreads', 'notes'] as const;
@@ -26,6 +26,7 @@ export async function loadPosts(): Promise<Post[]> {
         things: p.data.things.map((t) => t.id),
         date: p.data.date,
         title: p.data.title ?? '',
+        images: p.data.images.length,
       });
     })
     .sort((a, b) => b.when.getTime() - a.when.getTime());
@@ -40,8 +41,18 @@ export function thingNames(things: Thing[]): Map<string, string> {
   return new Map(things.map((t) => [t.id, t.data.name]));
 }
 
-export function thingColors(things: Thing[]): Map<string, string> {
-  return new Map(things.filter((t) => t.data.color).map((t) => [t.id, t.data.color]));
+/** A project's colour on paper (exact, per the hand-over) and the brighter one for dark. */
+export interface Hue {
+  c: string;
+  cd: string;
+}
+export const MISC_HUE: Hue = { c: '#8a8985', cd: '#8a8985' };
+export function thingHues(things: Thing[]): Map<string, Hue> {
+  return new Map(things.filter((t) => t.data.color).map((t) => [t.id, { c: t.data.color, cd: t.data.colorDark || t.data.color }]));
+}
+/** The inline style that hands a hue to CSS (`.proj` resolves it per theme). */
+export function hueStyle(h?: Hue): string | undefined {
+  return h ? `--c: ${h.c}; --cd: ${h.cd}` : undefined;
 }
 
 export function postsOf(posts: Post[], thingId: string): Post[] {
