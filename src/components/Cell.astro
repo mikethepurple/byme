@@ -4,8 +4,8 @@
 // Longread) with the number or date on the right, then a box inside the same
 // margins. A post fills its box from the top left: text cut at the bottom, a
 // picture cropped to it, a set as a strip you swipe. A project is composed
-// the other way up: its name large on the floor of the box, the line and the
-// try link above it — the one thing in the grid that is not a fragment.
+// the other way up: its block — the big name, the line, the try link — sits on
+// the floor of the box; the one thing in the grid that is not a fragment.
 // The label's words are links of their own (Photo → the photos, Ada → the
 // project); the rest of the cell opens the post.
 import { Image } from 'astro:assets';
@@ -35,6 +35,7 @@ const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } 
         <span class:list={['when', { tint: !!thing.data.color }]}>{String(index).padStart(2, '0')}</span>
       </div>
       <div class="box floor">
+        <a href={`/${thing.id}`} class="name" transition:name={`thing-${thing.id}`}>{thing.data.name}</a>
         {thing.data.line && <p class="line">{thing.data.line}</p>}
         {thing.data.try.length > 0 && (
           <p class="try">
@@ -43,7 +44,6 @@ const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } 
             ))}
           </p>
         )}
-        <a href={`/${thing.id}`} class="name" transition:name={`thing-${thing.id}`}>{thing.data.name}</a>
       </div>
     </article>
   )
@@ -144,12 +144,11 @@ const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } 
   .box::after { content: ''; position: absolute; inset: 0; }
   .inner { position: relative; height: 100%; overflow: hidden; }
 
-  /* a project: the name large on the floor of the box, the line and the try
-     link above it; the name is the link, stretched over the cell */
+  /* a project: name, line, try link as one block on the floor of the box;
+     the name is the link, stretched over the cell */
   .box.floor { display: flex; flex-direction: column; justify-content: flex-end; overflow: visible; }
   .name {
     display: block;
-    margin-top: 1.25rem;
     font-size: clamp(2.25rem, 16cqw, 4.5rem);
     font-weight: 500;
     letter-spacing: -0.03em;
@@ -160,8 +159,8 @@ const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } 
   .name::after { content: ''; position: absolute; inset: 0; }
   .cell.thing:hover .name { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; text-decoration-color: var(--accent-ink); }
   .cell.thing.tint:hover .name { text-decoration-color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
-  .line { margin: 0; max-width: 30ch; color: var(--ink-2); }
-  .try { margin: 0.5rem 0 0; display: flex; gap: 1rem; }
+  .line { margin: 0.9rem 0 0; max-width: 30ch; color: var(--ink-2); }
+  .try { margin: 0.6rem 0 0; display: flex; gap: 1rem; }
   .try a { position: relative; z-index: 1; }
 
   /* a picture fills the box, cropped; a set is a strip of them, above the
