@@ -86,6 +86,7 @@ let description: string | undefined;
 let image: string | undefined;
 let scope: Scope = {};
 let scoped: Post[] = posts;
+let forKinds: Post[] = posts; // the kind row ignores its own filter: project and time only
 let feed: Post[] = [];
 let older: string | undefined;
 let newer: string | undefined;
@@ -95,7 +96,10 @@ let filterLabel = 'filter';
 if (props.type === 'browse') {
   scope = { thing: props.thing, lane: props.lane, month: props.month };
   title = scopeLabel(scope, names).replace(MISC, 'Misc');
-  scoped = props.thing === MISC ? scopePosts(ofProject(MISC), { lane: props.lane, month: props.month }) : scopePosts(posts, scope);
+  const inProject = props.thing === MISC ? ofProject(MISC) : posts;
+  const without = props.thing === MISC ? {} : { thing: props.thing };
+  forKinds = scopePosts(inProject, { ...without, month: props.month });
+  scoped = scopePosts(forKinds, { lane: props.lane });
   if (props.page) {
     const n = props.page;
     feed = scoped.slice((n - 1) * PAGE_SIZE, n * PAGE_SIZE);
@@ -202,7 +206,7 @@ const offset = post?.data.date.match(/(Z|[+-]\d\d:?\d\d)$/)?.[1];
       )
     }
   </Fragment>
-  <Nav slot="side" things={things} posts={posts} scoped={headThing ? theirs : props.type === 'read' ? posts : scoped} scope={scope} hues={hues} where={props.type === 'read' ? 'post' : 'browse'}>
+  <Nav slot="side" things={things} posts={posts} scoped={props.type === 'read' ? posts : forKinds} scope={scope} hues={hues} where={props.type === 'read' ? 'post' : 'browse'}>
     {
       post && !post.data.images.length && (
         <div class="more-wide">
