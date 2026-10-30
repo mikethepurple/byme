@@ -241,3 +241,16 @@ describe('cleanKey — the publishing key survives what notes and password manag
     expect(cleanKey(`​${k} `)).toBe(k);
   });
 });
+
+describe('a Shortcut form — text fields sent as file parts still count', () => {
+  it('reads category (and content) from a small text file part', async () => {
+    const fd = new FormData();
+    fd.append('photo[]', new File([new Uint8Array([0xff, 0xd8, 0xff])], 'a.jpg', { type: 'image/jpeg' }));
+    fd.append('category', new File(['detourist'], 'text.txt', { type: 'text/plain' }));
+    fd.append('content', new File(['A caption'], 'text.txt', { type: 'text/plain' }));
+    const inc = await parseMicropubRequest(new Request('https://x/micropub', { method: 'POST', body: fd }));
+    expect(inc.categories).toEqual(['detourist']);
+    expect(inc.content).toBe('A caption');
+    expect(inc.photos).toHaveLength(1);
+  });
+});

@@ -92,6 +92,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   try {
     const inc = await parseMicropubRequest(request);
+    console.log(`[micropub] post: ${inc.photos.length} photo(s), categories [${inc.categories.join(',')}], ${inc.content.length} chars of text`);
     const photos = await resolvePhotos(inc.photos);
     if (!inc.content && !inc.name && !inc.link && photos.length === 0) {
       throw new MicropubError(400, 'Nothing to post');

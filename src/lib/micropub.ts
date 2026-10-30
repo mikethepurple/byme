@@ -86,6 +86,18 @@ export async function parseMicropubRequest(req: Request): Promise<Incoming> {
   } catch {
     throw new MicropubError(400, 'Body must be JSON, form-urlencoded or multipart');
   }
+  // iOS Shortcuts can send a text field (category, content) as a small text
+  // file part; read those as text. Pictures stay files.
+  const raw = fd;
+  fd = new FormData();
+  for (const [k, v] of raw.entries()) {
+    const base = k.replace(/\[\]$/, '');
+    if (typeof v !== 'string' && base !== 'photo' && v.size < 64_000 && !/^image\//.test(v.type)) {
+      fd.append(k, (await v.text()).trim());
+    } else {
+      fd.append(k, v);
+    }
+  }
   const h = fd.get('h');
   if (h && h !== 'entry') throw new MicropubError(400, 'Unsupported type');
   const str = (k: string) => {

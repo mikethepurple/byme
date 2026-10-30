@@ -17,10 +17,12 @@ interface Props {
   hue?: Hue; // the 6px strip (a project's colour, misc gray, about amber)
   filterLabel?: string; // the top bar's "filter" link, e.g. "filter: Ada"
   headed?: boolean; // whether the page has a head; a conditional slot counts as present even when empty
+  shortHead?: boolean; // a head with only its top line (an untitled picture): no reserved height
 }
 
 const { title, description, image, type, hue, filterLabel = 'filter' } = Astro.props;
 const hasHead = Astro.props.headed ?? Astro.slots.has('head');
+const shortHead = Astro.props.shortHead ?? false;
 ---
 
 <Base title={title} description={description} image={image} type={type}>
@@ -30,7 +32,7 @@ const hasHead = Astro.props.headed ?? Astro.slots.has('head');
       <a href="/about" class="about">about</a>
       <a href="#filter" class="filter">{filterLabel}</a>
     </header>
-    {hasHead && <div class="head"><slot name="head" /></div>}
+    {hasHead && <div class:list={['head', { short: shortHead }]}><slot name="head" /></div>}
     <aside class="menu" id="filter">
       <div class="sheet-bar">
         <a href="/" class="brand"><span class="dot"></span>by.erikov.me</a>
@@ -76,6 +78,7 @@ const hasHead = Astro.props.headed ?? Astro.slots.has('head');
     flex-direction: column;
     min-width: 0;
   }
+  .head.short { min-height: 0; }
   .content { grid-column: 1; grid-row: 2; min-width: 0; }
   .shell:not(.headed) .content { grid-row: 1 / -1; }
 
