@@ -24,7 +24,6 @@ import {
   type Post,
   type Thing,
   type Scope,
-  type Item,
 } from '../lib/load';
 
 export const prerender = true;
@@ -76,11 +75,11 @@ let title = '';
 let description: string | undefined;
 let image: string | undefined;
 let scope: Scope = {};
-let items: Item[] = [];
+let items: Post[] = [];
 let older: string | undefined;
 let newer: string | undefined;
 let head: { thing: Thing; index: number } | undefined;
-let similarItems: Item[] = [];
+let similarItems: Post[] = [];
 
 if (props.type === 'browse') {
   scope = { thing: props.thing, lane: props.lane, month: props.month };
@@ -99,7 +98,7 @@ if (props.type === 'browse') {
   } else {
     feed = scoped.slice(0, SCOPED_MAX);
   }
-  items = feed.map((post) => ({ kind: 'post', post }));
+  items = feed;
   if (props.thing) {
     const t = things.find((x) => x.id === props.thing)!;
     head = { thing: t, index: things.indexOf(t) + 1 };
@@ -111,14 +110,14 @@ if (props.type === 'browse') {
   title = p.data.title || firstLine(p.plain) || `${p.kind} · ${formatDate(p.data.date)}`;
   description = p.text ? firstLine(p.plain, 160) : undefined;
   image = p.data.images[0]?.src;
-  similarItems = similar(p, posts, SIMILAR).map((post) => ({ kind: 'post', post }));
+  similarItems = similar(p, posts, SIMILAR);
 }
 ---
 
 <TwoPane title={title} description={description} image={image} type={props.type === 'read' ? 'article' : 'website'}>
   <Fragment slot="content">
     {head && <ProjectHead thing={head.thing} index={head.index} />}
-    {props.type === 'browse' && <Grid items={items} names={names} colors={colors} />}
+    {props.type === 'browse' && <Grid posts={items} names={names} colors={colors} />}
     {
       (older || newer) && (
         <nav class="pages small">
@@ -132,7 +131,7 @@ if (props.type === 'browse') {
       props.type === 'read' && similarItems.length > 0 && (
         <section class="similar">
           <h2 class="label small">Similar posts</h2>
-          <Grid items={similarItems} names={names} colors={colors} />
+          <Grid posts={similarItems} names={names} colors={colors} />
         </section>
       )
     }

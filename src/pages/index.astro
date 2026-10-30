@@ -1,26 +1,33 @@
 ---
-// The front: a grid of the projects, whatever is pinned and the latest posts;
-// the navigation on the right.
+// The front: the projects as a band of their own, then the latest posts
+// (pinned first) as the grid; the navigation on the right.
 import TwoPane from '../layouts/TwoPane.astro';
 import Nav from '../components/Nav.astro';
+import Projects from '../components/Projects.astro';
 import Grid from '../components/Grid.astro';
 import { frontCells } from '../lib/related';
-import { loadPosts, loadThings, thingNames, thingColors, type Item } from '../lib/load';
+import { loadPosts, loadThings, thingNames, thingColors } from '../lib/load';
 
 export const prerender = true;
 
-const LATEST = 6; // latest posts in the grid after the projects and the pinned ones
+const LATEST = 6; // latest posts after the pinned ones
 
 const things = await loadThings();
 const posts = await loadPosts();
 const names = thingNames(things);
 const colors = thingColors(things);
-const items: Item[] = frontCells(things, posts, LATEST).map((c) =>
-  c.kind === 'thing' ? { kind: 'thing', thing: c.thing, index: things.indexOf(c.thing) + 1 } : { kind: 'post', post: c.post },
-);
+const latest = frontCells(things, posts, LATEST).flatMap((c) => (c.kind === 'post' ? [c.post] : []));
 ---
 
 <TwoPane title="by.erikov.me">
-  <Grid slot="content" items={items} names={names} colors={colors} />
+  <Fragment slot="content">
+    <Projects things={things} />
+    <h2 class="label small">Latest</h2>
+    <Grid posts={latest} names={names} colors={colors} />
+  </Fragment>
   <Nav slot="side" things={things} posts={posts} where="front" />
 </TwoPane>
+
+<style>
+  .label { font-weight: 400; color: var(--ink-3); margin: 0; padding: 22px var(--page-pad) 6px; }
+</style>

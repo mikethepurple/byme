@@ -1,0 +1,76 @@
+---
+// The projects on the front: a band of tiles above the posts, a different
+// shape from a post cell — no label row, not square, each tile a small
+// project head: number in the project's colour, the name, the line, where to
+// try it. The name morphs into the project page's head.
+import type { Thing } from '../lib/load';
+
+interface Props {
+  things: Thing[];
+}
+
+const { things } = Astro.props;
+const hostOf = (u: string) => u.replace(/^https?:\/\//, '').replace(/\/$/, '');
+---
+
+<h2 class="label small">Projects I'm working on</h2>
+<section class="band">
+  {
+    things.map((t, i) => (
+      <article class="tile">
+        <span class:list={['n', 'small', { tint: !!t.data.color }]} style={t.data.color ? `--c: ${t.data.color}` : undefined}>
+          {String(i + 1).padStart(2, '0')}
+        </span>
+        <a href={`/${t.id}`} class="name" transition:name={`thing-${t.id}`}>{t.data.name}</a>
+        {t.data.line && <p class="line">{t.data.line}</p>}
+        {t.data.try.length > 0 && (
+          <p class="try">
+            {t.data.try.map((l) => (
+              <a href={l.url}>{hostOf(l.url)}</a>
+            ))}
+          </p>
+        )}
+      </article>
+    ))
+  }
+</section>
+
+<style>
+  .label {
+    font-weight: 400;
+    color: var(--ink-3);
+    margin: 0;
+    padding: 14px var(--page-pad) 6px;
+  }
+  .band {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    width: calc(100% + 1px);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .tile {
+    position: relative;
+    container-type: inline-size;
+    padding: 20px var(--page-pad) 28px;
+    border-right: 1px solid var(--line);
+  }
+  .n { display: block; color: var(--ink-3); }
+  .n.tint { font-weight: 500; color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
+  .name {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: clamp(2.25rem, 11cqw, 3.5rem);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  /* the name is the link, stretched over the tile; the try link sits above it */
+  .name::after { content: ''; position: absolute; inset: 0; }
+  .tile:hover .name { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; text-decoration-color: var(--accent-ink); }
+  .line { margin: 0.9rem 0 0; max-width: 32ch; color: var(--ink-2); }
+  .try { margin: 0.75rem 0 0; display: flex; gap: 1rem; }
+  .try a { position: relative; z-index: 1; }
+</style>

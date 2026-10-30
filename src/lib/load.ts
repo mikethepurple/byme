@@ -6,9 +6,6 @@ import { kindOf, parseDate, laneOf, plain, type Kind } from './posts';
 export type Post = CollectionEntry<'posts'> & { kind: Kind; when: Date; text: string; plain: string; things: string[]; pinned: boolean };
 export type Thing = CollectionEntry<'things'>;
 
-/** A cell of a grid: a project with its number, or a post. */
-export type Item = { kind: 'thing'; thing: Thing; index: number } | { kind: 'post'; post: Post };
-
 export const LANES = ['photos', 'longreads', 'notes'] as const;
 export type Lane = (typeof LANES)[number];
 

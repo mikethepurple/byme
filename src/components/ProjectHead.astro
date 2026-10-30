@@ -1,7 +1,6 @@
 ---
 // The top of a project page: number (in the project's colour), name, the one
-// line, where to try it; the name in the project's colour. No picture: the
-// posts underneath are the pictures.
+// line, where to try it. No picture: the posts underneath are the pictures.
 // The column's kind and when rows narrow them.
 import type { Thing } from '../lib/load';
 
@@ -38,7 +37,6 @@ const { thing, index } = Astro.props;
   }
   .n { color: var(--ink-3); }
   .n.tint { font-weight: 500; color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
-  .head.tint .name { color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
   .name {
     font-size: clamp(2.5rem, 7cqw, 4.5rem);
     font-weight: 500;
