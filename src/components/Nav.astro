@@ -1,9 +1,9 @@
 ---
 // The right pane: navigation only, the same on every page. Three filter rows of
 // one shape — project, kind, when — each with its own "all" first, and they
-// combine (Ada's photos in October). All three on "all" is everything. A dot
-// in the project's colour stands before its name — the colour the cells and
-// the project head carry on the number.
+// combine (Ada's photos in October). All three on "all" is everything. A
+// project's name is plain; it takes the project's colour when marked or
+// hovered — the colour the cells and the project head carry on the number.
 import type { Post, Thing, Scope } from '../lib/load';
 
 interface Props {
@@ -38,7 +38,6 @@ const tint = (c: string) => `--c: ${c}`;
       {
         things.map((t) => (
           <a href={at(t.id, month, lane)} class:list={['project', { on: marks && thing === t.id, tint: !!t.data.color }]} style={t.data.color ? tint(t.data.color) : undefined}>
-            <i class="dot"></i>
             {t.data.name}
           </a>
         ))
@@ -98,17 +97,8 @@ const tint = (c: string) => `--c: ${c}`;
   .options a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
   .options a.on { color: var(--accent-ink); }
 
-  /* a project: a dot in its colour before the name; marked and underlined in
-     its colour too (more specific than the amber mark above) */
-  .project { display: inline-flex; align-items: center; gap: 0.4em; }
-  .project .dot {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--ink-3);
-    flex: none;
-  }
-  .project.tint .dot { background: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
+  /* a project: marked and underlined in its own colour (more specific than
+     the amber mark above) */
   .options a.project.tint:hover { text-decoration-color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
   .options a.project.tint.on { color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
 
