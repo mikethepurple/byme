@@ -1,5 +1,6 @@
 ---
 import { sealGrant } from '../lib/grant';
+import { cleanKey } from '../lib/env';
 
 export const prerender = false;
 
@@ -15,14 +16,14 @@ let wrongKey = false;
 // If POST, validate password and redirect with code
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
-  const password = String(form.get('password') ?? '').trim();
+  const password = cleanKey(String(form.get('password') ?? ''));
   const postRedirectUri = form.get('redirect_uri') as string;
   const postState = form.get('state') as string;
   const postScope = form.get('scope') as string;
   const postClientId = form.get('client_id') as string;
   const postMe = form.get('me') as string;
 
-  if (password && password === (process.env.MICROPUB_TOKEN ?? '').trim()) {
+  if (password && password === cleanKey(process.env.MICROPUB_TOKEN)) {
     // Generate a short-lived auth code
     const code = crypto.randomUUID();
     // Store code in a cookie (worker has no persistent storage between requests,

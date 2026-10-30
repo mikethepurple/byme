@@ -231,3 +231,13 @@ describe('liftImages — pictures iA Writer puts in the text become the post\'s 
     expect(liftImages(`<p><img src="${url}" alt=""></p>`, '').urls).toEqual([url]);
   });
 });
+
+describe('cleanKey — the publishing key survives what notes and password managers add', () => {
+  it('drops spaces, invisible characters and non-hex letters', async () => {
+    const { cleanKey } = await import('./env');
+    const k = '3d20ada367d60e0159056837b1e64ab371f34a559b0a1d11f7abc1fe27cebe9c';
+    expect(cleanKey(` ${k}\n`)).toBe(k);
+    expect(cleanKey(`${k}x`)).toBe(k);
+    expect(cleanKey(`​${k} `)).toBe(k);
+  });
+});

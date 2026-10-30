@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { openGrant } from '../../lib/grant';
+import { cleanKey } from '../../lib/env';
 
 export const prerender = false;
 
@@ -11,7 +12,7 @@ function keyFrom(request: Request, body?: Record<string, string>): string {
   return h || new URL(request.url).searchParams.get('token')?.trim() || body?.token?.trim() || '';
 }
 function verified(key: string): Response {
-  const ok = !!key && key === (process.env.MICROPUB_TOKEN ?? '').trim();
+  const ok = !!cleanKey(key) && cleanKey(key) === cleanKey(process.env.MICROPUB_TOKEN);
   if (!ok) console.log(`[auth/token] verify refused: ${key ? `key of length ${key.length}` : 'no key'}`);
   return new Response(
     JSON.stringify(

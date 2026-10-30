@@ -22,11 +22,15 @@ export function publishEnv(locals: App.Locals | Record<string, unknown>): Publis
   };
 }
 
+/** The publishing key is hex: anything else (spaces, invisible characters from a
+ * rich-text note, a stray letter) is dropped before comparing. */
+export const cleanKey = (s: string | null | undefined) => (s ?? '').replace(/[^0-9a-f]/gi, '').toLowerCase();
+
 export function authorized(request: Request, token?: string): boolean {
   if (!token) return false;
   const auth = request.headers.get('Authorization') ?? '';
-  const bearer = auth.replace(/^Bearer\s+/i, '').trim();
-  return bearer.length > 0 && bearer === token.trim();
+  const bearer = cleanKey(auth.replace(/^Bearer\s+/i, ''));
+  return bearer.length > 0 && bearer === cleanKey(token);
 }
 
 export function json(body: unknown, status = 200, headers: Record<string, string> = {}): Response {
