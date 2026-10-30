@@ -3,8 +3,8 @@
 // shape: a label row on top saying what it is (Project, Photo, Set, Note,
 // Longread) with the number or date on the right, then a box inside the same
 // margins. Text is cut at the box's bottom; a picture fills the box, cropped;
-// a set is a strip of such pictures you swipe through. A project cell is
-// washed with the project's colour, so projects read as a kind of their own.
+// a set is a strip of such pictures you swipe through. A project cell sets
+// its name in the project's colour, so projects read as a kind of their own.
 // The label's words are links of their own (Photo → the photos, Ada → the
 // project); the rest of the cell opens the post.
 import { Image } from 'astro:assets';
@@ -28,7 +28,7 @@ const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } 
 
 {
   thing && (
-    <article class:list={['cell', 'thing', { tint: !!thing.data.color, wash: !!thing.data.color }]} style={thing.data.color ? `--c: ${thing.data.color}` : undefined}>
+    <article class:list={['cell', 'thing', { tint: !!thing.data.color }]} style={thing.data.color ? `--c: ${thing.data.color}` : undefined}>
       <div class="top small">
         <span class="what">Project</span>
         <span class:list={['when', { tint: !!thing.data.color }]}>{String(index).padStart(2, '0')}</span>
@@ -137,8 +137,7 @@ const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } 
   .box::after { content: ''; position: absolute; inset: 0; }
   .inner { position: relative; height: 100%; overflow: hidden; }
 
-  /* a project: a wash of its colour over the cell, its name and line, nothing else */
-  .cell.wash { background: color-mix(in oklab, var(--c) var(--wash), var(--bg)); }
+  /* a project: its name in its colour, its line, nothing else */
   .name {
     display: block;
     font-size: clamp(1.75rem, 13cqw, 3rem);
@@ -146,6 +145,7 @@ const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } 
     letter-spacing: -0.02em;
     line-height: 1;
   }
+  .cell.tint .name { color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
   .box:hover .name { text-decoration: underline; text-decoration-color: var(--accent-ink); text-decoration-thickness: 2px; text-underline-offset: 6px; }
   .cell.tint .box:hover .name { text-decoration-color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
   .line { margin: 0.75rem 0 0; max-width: 30ch; color: var(--ink-2); }
