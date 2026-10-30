@@ -2,7 +2,7 @@
 // One screen for the whole site: what you are looking at on the left (2/3),
 // the navigation on the right (1/3). Both panes are the full height of the
 // window and scroll on their own, no visible scrollbar. Narrow screens stack
-// them: a one-line brand row, the content, then the navigation.
+// them: the navigation (brand and the three rows) on top, the content under it.
 import Base from './Base.astro';
 
 interface Props {
@@ -18,10 +18,6 @@ const { title, description, image, type } = Astro.props;
 <Base title={title} description={description} image={image} type={type}>
   <main class="panes">
     <section class="pane content">
-      <div class="phone-brand">
-        <a href="/" class="brand"><span class="dot"></span>by.erikov.me</a>
-        <a href="#nav" class="small">menu ↓</a>
-      </div>
       <slot name="content" />
     </section>
     <aside class="pane side">
@@ -39,17 +35,6 @@ const { title, description, image, type } = Astro.props;
   }
   .pane { background: var(--bg); container: pane / inline-size; overflow-x: clip; }
 
-  .phone-brand {
-    display: none;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px var(--page-pad);
-    border-bottom: 1px solid var(--line);
-  }
-  .brand { display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; font-weight: 500; }
-  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
-  .phone-brand .small { text-decoration: none; color: var(--ink-2); }
-
   @media (min-width: 901px) {
     :global(html), :global(body) { height: 100%; }
     :global(body) { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
@@ -65,7 +50,6 @@ const { title, description, image, type } = Astro.props;
 
   @media (max-width: 900px) {
     .panes { grid-template-columns: minmax(0, 1fr); }
-    .phone-brand { display: flex; }
-    .side { order: 1; border-top: 1px solid var(--line); }
+    .side { order: -1; }
   }
 </style>
