@@ -9,16 +9,17 @@ import type { Item } from '../lib/load';
 interface Props {
   items: Item[];
   names: Map<string, string>;
+  colors?: Map<string, string>;
 }
 
-const { items, names } = Astro.props;
+const { items, names, colors = new Map() } = Astro.props;
 ---
 
 {items.length === 0 && <p class="empty small">Nothing here yet.</p>}
 {
   items.length > 0 && (
     <div class="grid">
-      {items.map((it) => (it.kind === 'thing' ? <Cell thing={it.thing} index={it.index} /> : <Cell post={it.post} names={names} />))}
+      {items.map((it) => (it.kind === 'thing' ? <Cell thing={it.thing} index={it.index} /> : <Cell post={it.post} names={names} colors={colors} />))}
     </div>
   )
 }

@@ -5,7 +5,7 @@ import TwoPane from '../layouts/TwoPane.astro';
 import Nav from '../components/Nav.astro';
 import Grid from '../components/Grid.astro';
 import { frontCells } from '../lib/related';
-import { loadPosts, loadThings, thingNames, type Item } from '../lib/load';
+import { loadPosts, loadThings, thingNames, thingColors, type Item } from '../lib/load';
 
 export const prerender = true;
 
@@ -14,12 +14,13 @@ const LATEST = 8;
 const things = await loadThings();
 const posts = await loadPosts();
 const names = thingNames(things);
+const colors = thingColors(things);
 const items: Item[] = frontCells(things, posts).map((c) =>
   c.kind === 'thing' ? { kind: 'thing', thing: c.thing, index: things.indexOf(c.thing) + 1 } : { kind: 'post', post: c.post },
 );
 ---
 
 <TwoPane title="by.erikov.me">
-  <Grid slot="content" items={items} names={names} />
+  <Grid slot="content" items={items} names={names} colors={colors} />
   <Nav slot="side" things={things} posts={posts} where="front" related={{ title: 'Latest', posts: posts.slice(0, LATEST) }} />
 </TwoPane>

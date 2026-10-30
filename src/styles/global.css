@@ -9,6 +9,13 @@
   --accent:  #ffb424;      /* the dot, underlines */
   --accent-ink: #ffb424;   /* amber as text: marked items */
 
+  /* the kinds, each its own colour */
+  --k-photo:    #6db3ff;
+  --k-set:      #b89cff;
+  --k-note:     #5fc48f;
+  --k-longread: #ff9a6b;
+  --tint-mix: 100%;        /* a project's colour as given; paper darkens it */
+
   --font-body: "Inter Tight", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: "SF Mono", "Fira Code", monospace;
 
@@ -28,6 +35,11 @@
     --ink-3:  #8f8d88;
     --line:   #d8d6d1;
     --accent-ink: #9a5200;
+    --k-photo:    #1f63c4;
+    --k-set:      #6b3fc9;
+    --k-note:     #1f7f4c;
+    --k-longread: #c0491a;
+    --tint-mix: 68%;
   }
 }
 :root[data-theme="light"] {
@@ -38,6 +50,11 @@
   --ink-3:  #8f8d88;
   --line:   #d8d6d1;
   --accent-ink: #9a5200;
+  --k-photo:    #1f63c4;
+  --k-set:      #6b3fc9;
+  --k-note:     #1f7f4c;
+  --k-longread: #c0491a;
+  --tint-mix: 68%;
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
@@ -47,6 +64,11 @@
   --ink-3:  #5c5c5c;
   --line:   #262626;
   --accent-ink: #ffb424;
+  --k-photo:    #6db3ff;
+  --k-set:      #b89cff;
+  --k-note:     #5fc48f;
+  --k-longread: #ff9a6b;
+  --tint-mix: 100%;
 }
 
 /* View transitions: one easing and one duration for everything that moves,
@@ -151,6 +173,16 @@ hr {
 
 ul, ol { padding-left: 1.25rem; margin: 0 0 1em; }
 li { margin-bottom: 0.25em; }
+
+/* --- Colour-coding --- */
+
+/* a project's colour (set per element as --c), darkened on paper */
+.tint { color: color-mix(in oklab, var(--c, var(--ink)) var(--tint-mix), #000); }
+/* a kind's colour */
+.k-photo { color: var(--k-photo); }
+.k-set { color: var(--k-set); }
+.k-note { color: var(--k-note); }
+.k-longread { color: var(--k-longread); }
 
 /* --- Small type (dates, kinds, nav) --- */
 

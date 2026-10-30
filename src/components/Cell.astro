@@ -15,9 +15,10 @@ interface Props {
   index?: number; // the project's number, 1-based
   post?: Post;
   names?: Map<string, string>;
+  colors?: Map<string, string>; // thing id → its colour
 }
 
-const { thing, index = 0, post, names = new Map() } = Astro.props;
+const { thing, index = 0, post, names = new Map(), colors = new Map() } = Astro.props;
 const imgs = post?.data.images ?? [];
 const link = post?.data.link || '';
 const hostOf = (u: string) => u.replace(/^https?:\/\//, '').replace(/\/$/, '');
@@ -29,7 +30,7 @@ const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } 
     <article class="cell thing">
       <div class="top small">
         <span class="what">Project</span>
-        <span class="when">{String(index).padStart(2, '0')}</span>
+        <span class="when tint" style={thing.data.color ? `--c: ${thing.data.color}` : undefined}>{String(index).padStart(2, '0')}</span>
       </div>
       <a href={`/${thing.id}`} class="box">
         <div class="inner">
@@ -46,11 +47,13 @@ const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } 
     <article class={`cell post kind-${post.kind}`} transition:name={`post-${post.id}`}>
       <div class="top small">
         <span class="what">
-          <a href={`/${laneOf(post.kind)}`}>{KIND[post.kind]}</a>
+          <a href={`/${laneOf(post.kind)}`} class={`k-${post.kind}`}>{KIND[post.kind]}</a>
           {post.things.map((id) => (
             <>
               <span class="sep"> · </span>
-              <a href={`/${id}`} class="who">{names.get(id) ?? id}</a>
+              <a href={`/${id}`} class:list={['who', { tint: colors.has(id) }]} style={colors.has(id) ? `--c: ${colors.get(id)}` : undefined}>
+                {names.get(id) ?? id}
+              </a>
             </>
           ))}
         </span>
@@ -112,11 +115,11 @@ const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } 
     padding: 12px var(--page-pad) 0;
   }
   .what { color: var(--ink); font-weight: 500; }
-  .what a { position: relative; z-index: 1; color: inherit; text-decoration: none; }
+  .what a { position: relative; z-index: 1; text-decoration: none; }
   .what a:hover { text-decoration: underline; text-decoration-color: var(--accent-ink); text-underline-offset: 3px; }
   .sep { color: var(--ink-3); font-weight: 400; }
-  .what a.who { color: var(--accent-ink); }
   .when { color: var(--ink-3); }
+  .when.tint { font-weight: 500; color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
 
   /* the box: everything sits inside the same margins; the link stretches over
      the whole cell, under the label's own links */

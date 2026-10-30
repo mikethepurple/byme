@@ -42,6 +42,10 @@ export function thingNames(things: Thing[]): Map<string, string> {
   return new Map(things.map((t) => [t.id, t.data.name]));
 }
 
+export function thingColors(things: Thing[]): Map<string, string> {
+  return new Map(things.filter((t) => t.data.color).map((t) => [t.id, t.data.color]));
+}
+
 export function postsOf(posts: Post[], thingId: string): Post[] {
   return posts.filter((p) => p.data.things.some((t) => t.id === thingId));
 }

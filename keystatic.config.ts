@@ -26,6 +26,7 @@ export default config({
           }),
           { label: 'Try links', itemLabel: (p) => p.fields.label.value },
         ),
+        color: fields.text({ label: 'Colour', description: 'A hex colour like #ffb424; shown on the project name in cells and on its number in the navigation' }),
         cover: fields.image({
           label: 'Cover',
           directory: 'src/assets/things',

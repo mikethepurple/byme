@@ -9,11 +9,12 @@ import type { Post } from '../lib/load';
 interface Props {
   post: Post;
   names: Map<string, string>;
+  colors?: Map<string, string>;
   newer?: Post;
   older?: Post;
 }
 
-const { post, names, newer, older } = Astro.props;
+const { post, names, colors = new Map(), newer, older } = Astro.props;
 const { Content } = await render(post);
 const offset = post.data.date.match(/(Z|[+-]\d\d:?\d\d)$/)?.[1];
 const link = post.data.link || '';
@@ -25,12 +26,14 @@ const link = post.data.link || '';
     <time datetime={post.when.toISOString()}>{formatDate(post.data.date)}</time>
     {offset && <span class="zone"> UTC{offset === 'Z' ? '' : offset}</span>}
     <span class="sep"> · </span>
-    {post.kind}
+    <span class={`k-${post.kind}`}>{post.kind}</span>
     {
       post.things.map((id) => (
         <>
           <span class="sep"> · </span>
-          <a href={`/${id}`}>{names.get(id) ?? id}</a>
+          <a href={`/${id}`} class:list={[{ tint: colors.has(id) }]} style={colors.has(id) ? `--c: ${colors.get(id)}` : undefined}>
+            {names.get(id) ?? id}
+          </a>
         </>
       ))
     }
@@ -71,6 +74,7 @@ const link = post.data.link || '';
   }
   .meta { margin: 0 0 1.5rem; color: var(--ink-2); }
   .meta a { color: var(--ink-2); text-decoration: none; }
+  .meta a.tint { color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
   .meta a:hover { color: var(--ink); text-decoration: underline; }
   .sep, .zone { color: var(--ink-3); }
 

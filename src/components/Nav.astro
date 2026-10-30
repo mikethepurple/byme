@@ -47,7 +47,9 @@ const everythingOn = where === 'browse' && !scope.thing;
   {
     things.map((t, i) => (
       <a href={`/${t.id}`} class:list={['row', { on: scope.thing === t.id }]}>
-        <span class="n small">{String(i + 1).padStart(2, '0')}</span>
+        <span class:list={['n', 'small', { tint: !!t.data.color }]} style={t.data.color ? `--c: ${t.data.color}` : undefined}>
+          {String(i + 1).padStart(2, '0')}
+        </span>
         <span class="name">{t.data.name}</span>
       </a>
     ))
@@ -140,6 +142,7 @@ const everythingOn = where === 'browse' && !scope.thing;
   }
   .row.plain { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; }
   .row .n { color: var(--ink-3); }
+  .row .n.tint { font-weight: 500; color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
   .name { font-size: 1.125rem; font-weight: 500; letter-spacing: -0.01em; }
   a.row:hover .name { text-decoration: underline; text-decoration-color: var(--accent-ink); text-underline-offset: 4px; }
   .row.on .name, .row.plain.on, .row.plain a.on { color: var(--accent-ink); }
