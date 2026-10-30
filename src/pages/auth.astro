@@ -11,17 +11,18 @@ const state = url.searchParams.get('state');
 const scope = url.searchParams.get('scope') || 'create';
 const responseType = url.searchParams.get('response_type') || 'code';
 
+let wrongKey = false;
 // If POST, validate password and redirect with code
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
-  const password = form.get('password');
+  const password = String(form.get('password') ?? '').trim();
   const postRedirectUri = form.get('redirect_uri') as string;
   const postState = form.get('state') as string;
   const postScope = form.get('scope') as string;
   const postClientId = form.get('client_id') as string;
   const postMe = form.get('me') as string;
 
-  if (password === process.env.MICROPUB_TOKEN) {
+  if (password && password === (process.env.MICROPUB_TOKEN ?? '').trim()) {
     // Generate a short-lived auth code
     const code = crypto.randomUUID();
     // Store code in a cookie (worker has no persistent storage between requests,
@@ -34,7 +35,9 @@ if (Astro.request.method === 'POST') {
     return Astro.redirect(redirect.toString(), 302);
   }
 
-  // Wrong password - fall through to show form again with error
+  // Wrong key: say so on the page, and log what arrived (length only, never the key)
+  wrongKey = true;
+  console.log(`[auth] wrong key: ${password ? `length ${password.length}, expected ${(process.env.MICROPUB_TOKEN ?? '').trim().length}` : 'empty'}`);
 }
 ---
 <html>
@@ -51,6 +54,7 @@ if (Astro.request.method === 'POST') {
     input[type=password] { width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; box-sizing: border-box; margin-bottom: 1rem; }
     button { width: 100%; padding: 0.6rem; background: #2f2e2b; color: white; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; }
     button:hover { opacity: 0.85; }
+    .err { color: #b3261e; margin: 0 0 1rem; }
   </style>
 </head>
 <body>
@@ -63,7 +67,8 @@ if (Astro.request.method === 'POST') {
       <input type="hidden" name="scope" value={scope} />
       <input type="hidden" name="client_id" value={clientId} />
       <input type="hidden" name="me" value={me} />
-      <input type="password" name="password" placeholder="Token" autofocus />
+      {wrongKey && <p class="err">That key is not the site's publishing key. If your browser filled the field in, clear it and paste the key from by.erikov.me-publishing-key.txt.</p>}
+      <input type="password" name="password" placeholder="Publishing key" autocomplete="off" autofocus />
       <button type="submit">Authorize</button>
     </form>
   </div>
