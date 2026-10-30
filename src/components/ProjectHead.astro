@@ -1,6 +1,7 @@
 ---
 // The top of a project page: number (in the project's colour), name, the one
-// line, where to try it. No picture: the posts underneath are the pictures.
+// line, where to try it, on a wash of the project's colour. No picture: the
+// posts underneath are the pictures.
 // The column's kind and when rows narrow them.
 import type { Thing } from '../lib/load';
 
@@ -12,7 +13,7 @@ interface Props {
 const { thing, index } = Astro.props;
 ---
 
-<header class="head">
+<header class:list={['head', { wash: !!thing.data.color }]} style={thing.data.color ? `--c: ${thing.data.color}` : undefined}>
   <div class="text">
     <span class:list={['n', 'small', { tint: !!thing.data.color }]} style={thing.data.color ? `--c: ${thing.data.color}` : undefined}>
       {String(index).padStart(2, '0')}

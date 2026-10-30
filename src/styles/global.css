@@ -10,6 +10,7 @@
   --accent-ink: #ffb424;   /* amber as text: marked items */
 
   --tint-mix: 100%;        /* a project's colour as given; paper darkens it */
+  --wash: 16%;             /* how much of a project's colour goes into its tile */
 
   --font-body: "Inter Tight", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: "SF Mono", "Fira Code", monospace;
@@ -30,6 +31,7 @@
     --line:   #d8d6d1;
     --accent-ink: #9a5200;
     --tint-mix: 68%;
+    --wash: 13%;
   }
 }
 :root[data-theme="light"] {
@@ -41,6 +43,7 @@
   --line:   #d8d6d1;
   --accent-ink: #9a5200;
   --tint-mix: 68%;
+  --wash: 13%;
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
@@ -51,6 +54,7 @@
   --line:   #262626;
   --accent-ink: #ffb424;
   --tint-mix: 100%;
+  --wash: 16%;
 }
 
 /* View transitions: one easing and one duration for everything that moves,
@@ -160,6 +164,8 @@ li { margin-bottom: 0.25em; }
 
 /* a project's colour (set per element as --c), darkened on paper */
 .tint { color: color-mix(in oklab, var(--c, var(--ink)) var(--tint-mix), #000); }
+/* a project's tile: a wash of its colour over the page */
+.wash { background: color-mix(in oklab, var(--c, var(--ink)) var(--wash), var(--bg)); }
 
 /* --- Small type (dates, kinds, nav) --- */
 
