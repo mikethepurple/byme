@@ -10,7 +10,9 @@ import {
   isAllowedImage,
   inboxPathFromUrl,
   MicropubError,
-  type Photo,, categoryList } from '../lib/micropub';
+  type Photo,
+  categoryList,
+} from '../lib/micropub';
 import { slugFor } from '../lib/slug';
 import { listPostSlugs, commitFiles, GitHubError } from '../lib/github';
 import { REPO, MAX_UPLOAD_BYTES, publishEnv, authorized, json } from '../lib/env';
