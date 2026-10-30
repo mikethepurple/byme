@@ -16,10 +16,11 @@ interface Props {
   type?: 'website' | 'article';
   hue?: Hue; // the 6px strip (a project's colour, misc gray, about amber)
   filterLabel?: string; // the top bar's "filter" link, e.g. "filter: Ada"
+  headed?: boolean; // whether the page has a head; a conditional slot counts as present even when empty
 }
 
 const { title, description, image, type, hue, filterLabel = 'filter' } = Astro.props;
-const hasHead = Astro.slots.has('head');
+const hasHead = Astro.props.headed ?? Astro.slots.has('head');
 ---
 
 <Base title={title} description={description} image={image} type={type}>

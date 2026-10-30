@@ -145,7 +145,7 @@ const postTitle = post ? postLead || post.title || (post.plain ? titleOf(post, 8
 const offset = post?.data.date.match(/(Z|[+-]\d\d:?\d\d)$/)?.[1];
 ---
 
-<TwoPane title={title} description={description} image={image} type={props.type === 'read' ? 'article' : 'website'} hue={hue} filterLabel={filterLabel}>
+<TwoPane title={title} description={description} image={image} type={props.type === 'read' ? 'article' : 'website'} hue={hue} filterLabel={filterLabel} headed={!!headThing || !!post}>
   {
     headThing && (
       <Head
