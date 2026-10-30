@@ -81,6 +81,9 @@ const ogImage = new URL(image ?? '/og.png', Astro.site ?? Astro.url).href;
 
   <link rel="alternate" type="application/rss+xml" title={siteTitle} href="/rss.xml" />
   <link rel="micropub" href="https://by.erikov.me/micropub" />
+  <!-- IndieAuth: how a Micropub app (iA Writer) signs in; the password is MICROPUB_TOKEN -->
+  <link rel="authorization_endpoint" href="https://by.erikov.me/auth" />
+  <link rel="token_endpoint" href="https://by.erikov.me/auth/token" />
 
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%23ffb424'/></svg>" />
 </head>
