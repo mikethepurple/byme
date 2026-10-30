@@ -72,6 +72,10 @@ export async function parseMicropubRequest(req: Request): Promise<Incoming> {
     inc.categories.push(...jt.tags);
     inc.link = text(p['bookmark-of']) || '';
     inc.photos = texts(p.photo).map((url) => ({ kind: 'url', url }));
+    const li = liftImages(inc.content, inc.name);
+    inc.content = li.content;
+    inc.name = li.name;
+    inc.photos.push(...li.urls.map((url) => ({ kind: 'url' as const, url })));
     return inc;
   }
 
@@ -106,6 +110,10 @@ export async function parseMicropubRequest(req: Request): Promise<Incoming> {
       inc.photos.push({ kind: 'file', name: v.name, type: v.type, data: new Uint8Array(await v.arrayBuffer()) });
     }
   }
+  const li = liftImages(inc.content, inc.name);
+  inc.content = li.content;
+  inc.name = li.name;
+  inc.photos.push(...li.urls.map((url) => ({ kind: 'url' as const, url })));
   return inc;
 }
 
@@ -240,4 +248,35 @@ export function splitTags(content: string): { content: string; tags: string[] } 
   if (!/^(#[\p{L}\p{N}_-]+\s*)+$/u.test(last)) return { content: content.trim(), tags: [] };
   const tags = last.split(/\s+/).map((t) => t.slice(1).toLowerCase());
   return { content: lines.slice(0, -1).join('\n').trim(), tags };
+}
+
+const IMG_MD = /!\[[^\]]*\]\(\s*<?([^)\s>]+)>?(?:\s+"[^"]*")?\s*\)/g;
+const IMG_HTML = /<img\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi;
+const FILE_TITLE = /^[\w .()-]+\.(png|jpe?g|gif|webp|heic|heif|tiff?)$/i;
+
+/**
+ * iA Writer uploads pictures to the media endpoint and puts them in the text.
+ * Pictures that open the text (blocks made only of pictures, before any words)
+ * become the post's own pictures, so a picture post is a Photo or a Set; what
+ * follows is the caption. A title that is just a file name ("IMG_0471.PNG")
+ * goes. Pictures inside a text that starts with words stay where they are.
+ */
+export function liftImages(content: string, name: string): { content: string; name: string; urls: string[] } {
+  const blocks = content.split(/\n\s*\n/);
+  const urls: string[] = [];
+  let i = 0;
+  for (; i < blocks.length; i++) {
+    const b = blocks[i].trim();
+    if (!b) continue;
+    const found = [...b.matchAll(IMG_MD), ...b.matchAll(IMG_HTML)].map((m) => m[1]);
+    const rest = b.replace(IMG_MD, '').replace(IMG_HTML, '').replace(/<\/?p>/gi, '').trim();
+    if (found.length === 0 || rest) break;
+    urls.push(...found);
+  }
+  if (urls.length === 0) return { content, name, urls };
+  return {
+    content: blocks.slice(i).join('\n\n').trim(),
+    name: FILE_TITLE.test(name.trim()) ? '' : name,
+    urls,
+  };
 }

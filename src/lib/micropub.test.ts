@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { splitTags, categoryList, parseMicropubRequest, storedDateFor, buildPost, isAllowedImage, inboxPathFromUrl } from './micropub';
+import { liftImages, splitTags, categoryList, parseMicropubRequest, storedDateFor, buildPost, isAllowedImage, inboxPathFromUrl } from './micropub';
 
 const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
@@ -209,5 +209,25 @@ describe('trailing hashtags — a last line of #tags is the project, not text', 
     const inc = await parseMicropubRequest(req);
     expect(inc.content).toBe('Hello.');
     expect(inc.categories).toContain('ada');
+  });
+});
+
+describe('liftImages — pictures iA Writer puts in the text become the post\'s pictures', () => {
+  const url = 'https://raw.githubusercontent.com/mikethepurple/byme/main/src/assets/inbox/1793375733-img-0471.png';
+  it('an image-only body: the picture is lifted out, the body is empty, a file-name title goes', () => {
+    expect(liftImages(`![](${url})`, 'IMG_0471.PNG')).toEqual({ content: '', name: '', urls: [url] });
+  });
+  it('several pictures and a caption: all lifted, the caption stays, a real title stays', () => {
+    const r = liftImages(`![](${url})\n\n![a](${url}?2)\n\nThe canal at dawn.`, 'Morning');
+    expect(r.urls).toEqual([url, `${url}?2`]);
+    expect(r.content).toBe('The canal at dawn.');
+    expect(r.name).toBe('Morning');
+  });
+  it('a picture inside a longer text stays in the text', () => {
+    const body = `First paragraph.\n\n![](${url})\n\nSecond paragraph.`;
+    expect(liftImages(body, 'Essay')).toEqual({ content: body, name: 'Essay', urls: [] });
+  });
+  it('html <img> as well as markdown', () => {
+    expect(liftImages(`<p><img src="${url}" alt=""></p>`, '').urls).toEqual([url]);
   });
 });
