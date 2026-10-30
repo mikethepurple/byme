@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { categoryList, parseMicropubRequest, storedDateFor, buildPost, isAllowedImage, inboxPathFromUrl } from './micropub';
+import { splitTags, categoryList, parseMicropubRequest, storedDateFor, buildPost, isAllowedImage, inboxPathFromUrl } from './micropub';
 
 const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
@@ -188,5 +188,26 @@ describe('categoryList — the project tags a client may use, from the things fi
   it('slugs from file paths, sorted, without the folder or extension', () => {
     expect(categoryList(['/src/content/things/manga.yaml', '/src/content/things/ada.yaml', '/src/content/things/detourist.yaml'])).toEqual(['ada', 'detourist', 'manga']);
     expect(categoryList([])).toEqual([]);
+  });
+});
+
+describe('trailing hashtags — a last line of #tags is the project, not text', () => {
+  it('moves #ada on its own last line into categories and drops it from the text', () => {
+    expect(splitTags('Body text.\n\n#ada')).toEqual({ content: 'Body text.', tags: ['ada'] });
+    expect(splitTags('Body.\n\n#ada #Manga\n')).toEqual({ content: 'Body.', tags: ['ada', 'manga'] });
+  });
+  it('leaves hashtags inside the text alone', () => {
+    expect(splitTags('I like #ada a lot.')).toEqual({ content: 'I like #ada a lot.', tags: [] });
+    expect(splitTags('No tags here.')).toEqual({ content: 'No tags here.', tags: [] });
+  });
+  it('a JSON post with a trailing #ada lands in categories', async () => {
+    const req = new Request('https://x/micropub', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ type: ['h-entry'], properties: { content: ['Hello.\n\n#ada'] } }),
+    });
+    const inc = await parseMicropubRequest(req);
+    expect(inc.content).toBe('Hello.');
+    expect(inc.categories).toContain('ada');
   });
 });

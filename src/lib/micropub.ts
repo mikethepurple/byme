@@ -67,6 +67,9 @@ export async function parseMicropubRequest(req: Request): Promise<Incoming> {
     inc.published = text(p.published) || undefined;
     inc.tz = text(p.tz) || undefined;
     inc.categories = texts(p.category);
+    const jt = splitTags(inc.content);
+    inc.content = jt.content;
+    inc.categories.push(...jt.tags);
     inc.link = text(p['bookmark-of']) || '';
     inc.photos = texts(p.photo).map((url) => ({ kind: 'url', url }));
     return inc;
@@ -92,6 +95,9 @@ export async function parseMicropubRequest(req: Request): Promise<Incoming> {
   inc.published = str('published') || undefined;
   inc.tz = str('tz') || undefined;
   inc.categories = all('category').filter((v): v is string => typeof v === 'string' && v.length > 0);
+  const ft = splitTags(inc.content);
+  inc.content = ft.content;
+  inc.categories.push(...ft.tags);
   inc.link = str('bookmark-of') || '';
   for (const v of all('photo')) {
     if (typeof v === 'string') {
@@ -221,4 +227,17 @@ export function buildPost(input: PostInput): { files: FileEntry[] } {
 /** The project tags a client may use (`?q=category`), from the things files' paths. */
 export function categoryList(paths: string[]): string[] {
   return paths.map((p) => p.split('/').pop()!.replace(/\.yaml$/, '')).sort();
+}
+
+/**
+ * A last line made only of #tags ("#ada", "#ada #manga") is the post's
+ * projects, not its text: iA Writer sends tags typed in the body as text.
+ * Hashtags inside a sentence stay where they are.
+ */
+export function splitTags(content: string): { content: string; tags: string[] } {
+  const lines = content.replace(/\s+$/, '').split('\n');
+  const last = lines[lines.length - 1]?.trim() ?? '';
+  if (!/^(#[\p{L}\p{N}_-]+\s*)+$/u.test(last)) return { content: content.trim(), tags: [] };
+  const tags = last.split(/\s+/).map((t) => t.slice(1).toLowerCase());
+  return { content: lines.slice(0, -1).join('\n').trim(), tags };
 }
