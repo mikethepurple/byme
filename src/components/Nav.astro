@@ -1,9 +1,10 @@
 ---
 // The right pane: navigation only, the same on every page. Three groups, one
 // shape inside each. Projects are places (big numbered rows, the number in the
-// project's colour). Posts and When are filters on the feed and combine with
-// each other; "all" and "all time" clear their own filter. A project's own
-// filters sit in its head on the left, not here.
+// project's colour). Posts: Everything is the place (every post, whatever its
+// project), with its filters by kind and by time underneath, which combine;
+// "all" and "all time" clear their own filter. A project's own filters sit in
+// its head on the left, not here.
 import type { Post, Thing, Scope } from '../lib/load';
 
 interface Props {
@@ -49,28 +50,34 @@ const kinds = [
   }
 
   <h2 class="label small">Posts</h2>
-  <div class="options">
-    {kinds.map((k) => <a href={k.href} class:list={[{ on: k.on }]}>{k.id}</a>)}
+  <a href="/everything" class:list={['row', 'every', { on: feed }]}>
+    <span class="name">Everything</span>
+    <span class="gloss small">all posts, from every project and from none</span>
+  </a>
+  <div class="filter">
+    <span class="k small">kind</span>
+    <span class="options">{kinds.map((k) => <a href={k.href} class:list={[{ on: k.on }]}>{k.id}</a>)}</span>
+  </div>
+  <div class="filter">
+    <span class="k small">when</span>
+    <span class="options">
+      <a href={laneTail || '/everything'} class:list={[{ on: feed && !month }]}>all time</a>
+      {
+        years.map((y) => (
+          <>
+            <a href={`/${y}${laneTail}`} class:list={['year', { on: feed && y === month }]}>{y}</a>
+            {months
+              .filter((m) => m.startsWith(y))
+              .map((m) => (
+                <a href={`/${m}${laneTail}`} class:list={[{ on: feed && m === month }]}>{MONTHS[+m.slice(5, 7) - 1]}</a>
+              ))}
+          </>
+        ))
+      }
+    </span>
   </div>
 
-  <h2 class="label small">When</h2>
-  <div class="options">
-    <a href={laneTail || '/everything'} class:list={[{ on: feed && !month }]}>all time</a>
-    {
-      years.map((y) => (
-        <>
-          <a href={`/${y}${laneTail}`} class:list={['year', { on: feed && y === month }]}>{y}</a>
-          {months
-            .filter((m) => m.startsWith(y))
-            .map((m) => (
-              <a href={`/${m}${laneTail}`} class:list={[{ on: feed && m === month }]}>{MONTHS[+m.slice(5, 7) - 1]}</a>
-            ))}
-        </>
-      ))
-    }
-  </div>
-
-  <div class="options foot small">
+  <div class="foot small">
     <a href="/rss.xml">rss</a>
     <button type="button" class="theme-toggle" aria-label="Switch between light and dark">dark</button>
   </div>
@@ -107,21 +114,29 @@ const kinds = [
   .row:hover .name { text-decoration: underline; text-decoration-color: var(--accent-ink); text-underline-offset: 4px; }
   .row.on .name { color: var(--accent-ink); }
 
-  /* a filter: its options in one row */
-  .options {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem 1rem;
+  /* everything: a place with a line saying what it is */
+  .row.every { grid-template-columns: minmax(0, 1fr); gap: 2px; align-items: start; }
+  .gloss { color: var(--ink-3); }
+
+  /* a filter on everything: its label in the number column, the options after */
+  .filter {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    gap: 1rem;
+    align-items: baseline;
     padding: 12px var(--page-pad);
     border-bottom: 1px solid var(--line);
   }
+  .filter .k { color: var(--ink-3); }
+  .options { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; }
   .options a { color: var(--ink-2); text-decoration: none; }
   .options a:hover { color: var(--ink); text-decoration: underline; }
   .options a.on { color: var(--accent-ink); }
   .options .year { color: var(--ink); }
   .options .year.on { color: var(--accent-ink); }
 
-  .foot a, .theme-toggle { color: var(--ink-3); }
+  .foot { display: flex; gap: 1rem; padding: 12px var(--page-pad); border-bottom: 1px solid var(--line); }
+  .foot a, .theme-toggle { color: var(--ink-3); text-decoration: none; }
   .foot a:hover, .theme-toggle:hover { color: var(--ink); }
   .theme-toggle { font: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 </style>
