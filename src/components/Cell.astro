@@ -45,16 +45,9 @@ const hostOf = (u: string) => u.replace(/^https?:\/\//, '').replace(/\/$/, '');
   post && (
     <a href={`/${post.id}`} class={`cell post kind-${post.kind}`} transition:name={`post-${post.id}`}>
       <div class="area">
-        {imgs.length === 1 && (
+        {imgs.length > 0 && (
           <div class="photo">
             <Image src={imgs[0]} alt={post.data.title || ''} widths={[480, 960]} sizes="(max-width: 900px) 100vw, 33vw" loading="lazy" />
-          </div>
-        )}
-        {imgs.length > 1 && (
-          <div class="set">
-            {imgs.slice(0, 4).map((img) => (
-              <Image src={img} alt="" widths={[320, 640]} sizes="(max-width: 900px) 50vw, 16vw" loading="lazy" />
-            ))}
           </div>
         )}
         {imgs.length === 0 && (
@@ -89,7 +82,11 @@ const hostOf = (u: string) => u.replace(/^https?:\/\//, '').replace(/\/$/, '');
     text-decoration: none;
     container-type: inline-size;
   }
-  .area { flex: 1 1 auto; min-height: 0; position: relative; display: flex; flex-direction: column; padding: 18px var(--page-pad) 0; }
+  /* Text sits inside the cell's padding and is cut at the caption line. A
+     picture takes the whole area edge to edge, cropped to it; a set shows its
+     first picture, the caption says "set". */
+  .area { flex: 1 1 auto; min-height: 0; position: relative; padding: 18px var(--page-pad) 0; overflow: hidden; }
+  .kind-photo .area, .kind-set .area { padding: 0; }
   .cap {
     flex: none;
     display: flex;
@@ -115,19 +112,11 @@ const hostOf = (u: string) => u.replace(/^https?:\/\//, '').replace(/\/$/, '');
   .cover { position: absolute; right: var(--page-pad); bottom: 0; width: 34%; }
   .cover :global(img) { width: 100%; height: auto; }
 
-  /* a photo: contained, whole */
-  .photo { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; padding-bottom: 6px; }
-  .photo :global(img) { width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; }
-
-  /* a set: up to four, squared */
-  .set { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr; gap: 2px; padding-bottom: 6px; }
-  .set :global(img) { width: 100%; height: 100%; object-fit: cover; }
+  .photo { position: absolute; inset: 0; }
+  .photo :global(img) { width: 100%; height: 100%; object-fit: cover; display: block; }
 
   /* text, clipped to the cell, fading out */
-  .text {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow: hidden;
+  .kind-note .area, .kind-longread .area {
     mask-image: linear-gradient(#000 70%, transparent 100%);
     -webkit-mask-image: linear-gradient(#000 70%, transparent 100%);
   }
