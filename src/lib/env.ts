@@ -28,7 +28,7 @@ export const cleanKey = (s: string | null | undefined) => (s ?? '').replace(/[^0
 
 export function authorized(request: Request, token?: string): boolean {
   if (!token) return false;
-  const auth = request.headers.get('Authorization') ?? '';
+  const auth = request.headers.get('Authorization') ?? request.headers.get('Authorisation') ?? '';
   const bearer = cleanKey(auth.replace(/^Bearer\s+/i, ''));
   return bearer.length > 0 && bearer === cleanKey(token);
 }
