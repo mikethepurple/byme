@@ -24,7 +24,10 @@ const THINGS = categoryList(Object.keys(import.meta.glob('/src/content/things/*.
 
 export const GET: APIRoute = async ({ request, locals }) => {
   const env = publishEnv(locals);
-  if (!authorized(request, env.micropubToken)) return new Response('Unauthorized', { status: 401 });
+  if (!authorized(request, env.micropubToken)) {
+    console.log(`[micropub] ${request.method} refused: ${request.headers.get('Authorization') ? 'wrong key' : 'no Authorization header'}`);
+    return json({ error: 'unauthorized', error_description: 'Wrong or missing publishing key' }, 401);
+  }
 
   const url = new URL(request.url);
   const q = url.searchParams.get('q');
@@ -78,7 +81,10 @@ async function resolvePhotos(photos: Photo[]): Promise<Photo[]> {
 
 export const POST: APIRoute = async ({ request, locals }) => {
   const env = publishEnv(locals);
-  if (!authorized(request, env.micropubToken)) return new Response('Unauthorized', { status: 401 });
+  if (!authorized(request, env.micropubToken)) {
+    console.log(`[micropub] ${request.method} refused: ${request.headers.get('Authorization') ? 'wrong key' : 'no Authorization header'}`);
+    return json({ error: 'unauthorized', error_description: 'Wrong or missing publishing key' }, 401);
+  }
   if (!env.githubToken) return new Response('GitHub token not configured', { status: 500 });
 
   const length = Number(request.headers.get('content-length') ?? 0);

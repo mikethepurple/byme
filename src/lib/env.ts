@@ -26,7 +26,7 @@ export function authorized(request: Request, token?: string): boolean {
   if (!token) return false;
   const auth = request.headers.get('Authorization') ?? '';
   const bearer = auth.replace(/^Bearer\s+/i, '').trim();
-  return bearer.length > 0 && bearer === token;
+  return bearer.length > 0 && bearer === token.trim();
 }
 
 export function json(body: unknown, status = 200, headers: Record<string, string> = {}): Response {
