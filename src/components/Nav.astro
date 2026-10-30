@@ -118,7 +118,8 @@ const projects = [...things.map((t) => ({ id: t.id, name: t.data.name })), { id:
 
   .foot { padding: 14px 20px; display: flex; gap: 18px; font-size: 13px; align-items: flex-start; }
   .foot a, .theme-toggle { color: var(--ink-2); text-decoration: none; }
-  .foot .about { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+  /* about is a link like rss and dark; underlined only when it is the page you are on */
+  .foot .about.on { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
   .foot a:hover, .theme-toggle:hover { color: var(--ink-2); }
   .theme-toggle { font: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 
