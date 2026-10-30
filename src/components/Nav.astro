@@ -79,7 +79,7 @@ const projects = [...things.map((t) => ({ id: t.id, name: t.data.name })), { id:
     </span>
   </div>
   <div class="foot">
-    <a href="/about" class="about">about</a>
+    <a href="/about" class:list={["about", { on: where === "about" }]}>about</a>
     <a href="/rss.xml">rss</a>
     <button type="button" class="theme-toggle" aria-label="Switch between light and dark">dark</button>
   </div>
