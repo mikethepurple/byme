@@ -1,4 +1,6 @@
 ---
+import { sealGrant } from '../lib/grant';
+
 export const prerender = false;
 
 const url = new URL(Astro.request.url);
@@ -24,12 +26,7 @@ if (Astro.request.method === 'POST') {
     const code = crypto.randomUUID();
     // Store code in a cookie (worker has no persistent storage between requests,
     // so we'll encode the grant info in the code itself using encryption)
-    const grantData = JSON.stringify({ scope: postScope, clientId: postClientId, me: postMe, ts: Date.now() });
-    const encoder = new TextEncoder();
-    const key = await crypto.subtle.importKey('raw', encoder.encode(process.env.KEYSTATIC_SECRET!.slice(0, 32)), 'AES-GCM', false, ['encrypt']);
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoder.encode(grantData));
-    const payload = btoa(String.fromCharCode(...iv)) + '.' + btoa(String.fromCharCode(...new Uint8Array(encrypted)));
+    const payload = await sealGrant({ scope: postScope, clientId: postClientId, me: postMe, ts: Date.now() }, process.env.KEYSTATIC_SECRET!);
 
     const redirect = new URL(postRedirectUri);
     redirect.searchParams.set('code', payload);

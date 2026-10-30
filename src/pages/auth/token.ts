@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { openGrant } from '../../lib/grant';
 
 export const prerender = false;
 
@@ -24,59 +25,41 @@ export const GET: APIRoute = async ({ request }) => {
   });
 };
 
-// Token issuance — exchange auth code for access token
+// Token issuance — exchange the sign-in code for the publishing key. Accepts a
+// form or JSON body; logs why a request is refused (visible in the Pages logs).
+async function readBody(request: Request): Promise<Record<string, string>> {
+  const ct = request.headers.get('content-type') ?? '';
+  if (ct.includes('application/json')) return (await request.json()) as Record<string, string>;
+  const fd = await request.formData();
+  return Object.fromEntries([...fd.entries()].map(([k, v]) => [k, String(v)]));
+}
+const fail = (error: string, why: string, status = 400) => {
+  console.log(`[auth/token] ${status} ${error}: ${why}`);
+  return new Response(JSON.stringify({ error, error_description: why }), { status, headers: { 'Content-Type': 'application/json' } });
+};
+
 export const POST: APIRoute = async ({ request }) => {
-  const body = await request.formData();
-  const grantType = body.get('grant_type');
-  const code = body.get('code') as string;
-  const redirectUri = body.get('redirect_uri') as string;
-  const clientId = body.get('client_id') as string;
-
-  if (!code) {
-    return new Response(JSON.stringify({ error: 'invalid_request' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  // Decrypt the code to validate it
+  let body: Record<string, string>;
   try {
-    const [ivB64, encB64] = code.split('.');
-    const iv = Uint8Array.from(atob(ivB64), c => c.charCodeAt(0));
-    const encrypted = Uint8Array.from(atob(encB64), c => c.charCodeAt(0));
-
-    const encoder = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-      'raw',
-      encoder.encode(process.env.KEYSTATIC_SECRET!.slice(0, 32)),
-      'AES-GCM',
-      false,
-      ['decrypt']
-    );
-    const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, encrypted);
-    const grant = JSON.parse(new TextDecoder().decode(decrypted));
-
-    // Check code isn't older than 10 minutes
-    if (Date.now() - grant.ts > 600_000) {
-      return new Response(JSON.stringify({ error: 'invalid_grant', error_description: 'Code expired' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    return new Response(JSON.stringify({
+    body = await readBody(request);
+  } catch {
+    return fail('invalid_request', 'unreadable body');
+  }
+  if (!body.code) return fail('invalid_request', `no code (fields: ${Object.keys(body).join(',')})`);
+  let grant: Record<string, any>;
+  try {
+    grant = await openGrant(body.code, process.env.KEYSTATIC_SECRET ?? '');
+  } catch {
+    return fail('invalid_grant', 'code does not open');
+  }
+  if (Date.now() - grant.ts > 600_000) return fail('invalid_grant', 'code expired');
+  return new Response(
+    JSON.stringify({
       access_token: process.env.MICROPUB_TOKEN,
       token_type: 'Bearer',
       scope: grant.scope || 'create',
       me: grant.me || 'https://by.erikov.me/',
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  } catch {
-    return new Response(JSON.stringify({ error: 'invalid_grant' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
+    }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } },
+  );
 };
