@@ -1,30 +1,56 @@
 ---
-// One cell of a grid: a post of any kind. Every cell has the same shape: a
-// label row on top saying what it is (Photo, Set, Note, Longread) with the
-// date on the right, then a box inside the same margins. Text is cut at the
-// box's bottom; a picture fills the box, cropped; a set is a strip of such
-// pictures you swipe through.
+// One cell of a grid: a project, or a post of any kind. Every cell has the
+// same shape: a label row on top saying what it is (Project, Photo, Set, Note,
+// Longread) with the number or date on the right, then a box inside the same
+// margins. A post fills its box from the top left: text cut at the bottom, a
+// picture cropped to it, a set as a strip you swipe. A project is composed
+// the other way up: its name large on the floor of the box, the line and the
+// try link above it — the one thing in the grid that is not a fragment.
 // The label's words are links of their own (Photo → the photos, Ada → the
 // project); the rest of the cell opens the post.
 import { Image } from 'astro:assets';
 import { formatShort, laneOf } from '../lib/posts';
-import type { Post } from '../lib/load';
+import type { Post, Thing } from '../lib/load';
 
 interface Props {
-  post: Post;
+  thing?: Thing;
+  index?: number; // the project's number, 1-based
+  post?: Post;
   names?: Map<string, string>;
   colors?: Map<string, string>; // thing id → its colour
 }
 
-const { post, names = new Map(), colors = new Map() } = Astro.props;
-const imgs = post.data.images;
-const link = post.data.link || '';
+const { thing, index = 0, post, names = new Map(), colors = new Map() } = Astro.props;
+const imgs = post?.data.images ?? [];
+const link = post?.data.link || '';
 const hostOf = (u: string) => u.replace(/^https?:\/\//, '').replace(/\/$/, '');
 const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } as const;
 ---
 
 {
-  (
+  thing && (
+    <article class:list={['cell', 'thing', { tint: !!thing.data.color }]} style={thing.data.color ? `--c: ${thing.data.color}` : undefined}>
+      <div class="top small">
+        <span class="what">Project</span>
+        <span class:list={['when', { tint: !!thing.data.color }]}>{String(index).padStart(2, '0')}</span>
+      </div>
+      <div class="box floor">
+        {thing.data.line && <p class="line">{thing.data.line}</p>}
+        {thing.data.try.length > 0 && (
+          <p class="try">
+            {thing.data.try.map((l) => (
+              <a href={l.url}>{l.label}</a>
+            ))}
+          </p>
+        )}
+        <a href={`/${thing.id}`} class="name" transition:name={`thing-${thing.id}`}>{thing.data.name}</a>
+      </div>
+    </article>
+  )
+}
+
+{
+  post && (
     <article class={`cell post kind-${post.kind}`} transition:name={`post-${post.id}`}>
       <div class="top small">
         <span class="what">
@@ -103,6 +129,7 @@ const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } 
   .sep { color: var(--ink-3); font-weight: 400; }
   .when { color: var(--ink-3); }
   .when.tint { font-weight: 500; color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
+  .when.tint { font-weight: 500; color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
 
   /* the box: everything sits inside the same margins; the link stretches over
      the whole cell, under the label's own links */
@@ -116,6 +143,26 @@ const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } 
   }
   .box::after { content: ''; position: absolute; inset: 0; }
   .inner { position: relative; height: 100%; overflow: hidden; }
+
+  /* a project: the name large on the floor of the box, the line and the try
+     link above it; the name is the link, stretched over the cell */
+  .box.floor { display: flex; flex-direction: column; justify-content: flex-end; overflow: visible; }
+  .name {
+    display: block;
+    margin-top: 1.25rem;
+    font-size: clamp(2.25rem, 16cqw, 4.5rem);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .name::after { content: ''; position: absolute; inset: 0; }
+  .cell.thing:hover .name { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; text-decoration-color: var(--accent-ink); }
+  .cell.thing.tint:hover .name { text-decoration-color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
+  .line { margin: 0; max-width: 30ch; color: var(--ink-2); }
+  .try { margin: 0.5rem 0 0; display: flex; gap: 1rem; }
+  .try a { position: relative; z-index: 1; }
 
   /* a picture fills the box, cropped; a set is a strip of them, above the
      stretched link so a swipe scrolls it and a tap still opens the post */

@@ -1,9 +1,8 @@
 ---
-// The front: the projects as a band of their own, then the latest posts
-// (pinned first) as the grid; the navigation on the right.
+// The front: one grid — the projects first, then the latest posts (pinned
+// first); the navigation on the right.
 import TwoPane from '../layouts/TwoPane.astro';
 import Nav from '../components/Nav.astro';
-import Projects from '../components/Projects.astro';
 import Grid from '../components/Grid.astro';
 import { frontCells } from '../lib/related';
 import { loadPosts, loadThings, thingNames, thingColors } from '../lib/load';
@@ -20,14 +19,6 @@ const latest = frontCells(things, posts, LATEST).flatMap((c) => (c.kind === 'pos
 ---
 
 <TwoPane title="by.erikov.me">
-  <Fragment slot="content">
-    <Projects things={things} />
-    <h2 class="label small">Latest</h2>
-    <Grid posts={latest} names={names} colors={colors} />
-  </Fragment>
+  <Grid slot="content" things={things} posts={latest} names={names} colors={colors} />
   <Nav slot="side" things={things} posts={posts} where="front" />
 </TwoPane>
-
-<style>
-  .label { font-weight: 400; color: var(--ink-3); margin: 0; padding: 22px var(--page-pad) 6px; }
-</style>

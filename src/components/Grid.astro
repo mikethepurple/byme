@@ -4,21 +4,23 @@
 // the pane so the last column's edge falls off. An empty slot in the last row
 // is ruled above and on its left by its neighbours, open below.
 import Cell from './Cell.astro';
-import type { Post } from '../lib/load';
+import type { Post, Thing } from '../lib/load';
 
 interface Props {
+  things?: Thing[]; // the projects, first, on the front
   posts: Post[];
   names: Map<string, string>;
   colors?: Map<string, string>;
 }
 
-const { posts, names, colors = new Map() } = Astro.props;
+const { things = [], posts, names, colors = new Map() } = Astro.props;
 ---
 
-{posts.length === 0 && <p class="empty small">Nothing here yet.</p>}
+{things.length + posts.length === 0 && <p class="empty small">Nothing here yet.</p>}
 {
-  posts.length > 0 && (
+  things.length + posts.length > 0 && (
     <div class="grid">
+      {things.map((thing, i) => <Cell thing={thing} index={i + 1} />)}
       {posts.map((post) => <Cell post={post} names={names} colors={colors} />)}
     </div>
   )
