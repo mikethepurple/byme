@@ -13,6 +13,7 @@ const scope = url.searchParams.get('scope') || 'create';
 const responseType = url.searchParams.get('response_type') || 'code';
 
 let wrongKey = false;
+let seen = '';
 // If POST, validate password and redirect with code
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
@@ -38,6 +39,8 @@ if (Astro.request.method === 'POST') {
 
   // Wrong key: say so on the page, and log what arrived (length only, never the key)
   wrongKey = true;
+  const raw = String(form.get('password') ?? '');
+  seen = `received ${raw.length} characters (${password.length} after cleaning)${password ? `, starting ${password.slice(0, 3)} and ending ${password.slice(-3)}` : ''}; fields: ${[...form.keys()].join(', ')}`;
   console.log(`[auth] wrong key: ${password ? `length ${password.length}, expected ${(process.env.MICROPUB_TOKEN ?? '').trim().length}` : 'empty'}`);
 }
 ---
@@ -68,7 +71,7 @@ if (Astro.request.method === 'POST') {
       <input type="hidden" name="scope" value={scope} />
       <input type="hidden" name="client_id" value={clientId} />
       <input type="hidden" name="me" value={me} />
-      {wrongKey && <p class="err">That key is not the site's publishing key. If your browser filled the field in, clear it and paste the key from by.erikov.me-publishing-key.txt.</p>}
+      {wrongKey && <p class="err">That key is not the site's publishing key.<br /><small>The site {seen}.</small></p>}
       <input type="password" name="password" placeholder="Publishing key" autocomplete="off" autofocus />
       <button type="submit">Authorize</button>
     </form>
