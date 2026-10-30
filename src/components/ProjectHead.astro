@@ -39,9 +39,9 @@ const { thing, index } = Astro.props;
 <style>
   .head {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 26%);
-    gap: 24px;
-    align-items: end;
+    grid-template-columns: minmax(0, 1fr) clamp(200px, 32%, 480px);
+    gap: 32px;
+    align-items: start;
     padding: 28px var(--pad-wide) 28px;
   }
   .n { color: var(--ink-3); }

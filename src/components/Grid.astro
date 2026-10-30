@@ -1,7 +1,8 @@
 ---
-// A ruled grid of cells, as many across as the pane allows. Lines come from
-// each cell's top and left edge; the grid is shifted one pixel up and left so
-// the outer ones fall off, and an empty slot in the last row stays bare.
+// A ruled grid of cells, as many across as the pane allows. Each cell draws its
+// right and bottom edge, the grid its top edge; the grid is one pixel wider than
+// the pane so the last column's edge falls off. An empty slot in the last row
+// is ruled above and on its left by its neighbours, open below.
 import Cell from './Cell.astro';
 import type { Item } from '../lib/load';
 
@@ -25,9 +26,9 @@ const { items, names } = Astro.props;
 <style>
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    margin: -1px 0 0 -1px;
-    border-bottom: 1px solid var(--line);
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    width: calc(100% + 1px);
+    border-top: 1px solid var(--line);
   }
   .empty { padding: 2rem var(--page-pad); }
 </style>

@@ -33,11 +33,11 @@ const { title, description, image, type } = Astro.props;
 <style>
   .panes {
     display: grid;
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 33.333%, 480px);
     gap: 1px;
     background: var(--line);
   }
-  .pane { background: var(--bg); container: pane / inline-size; }
+  .pane { background: var(--bg); container: pane / inline-size; overflow-x: clip; }
 
   .phone-brand {
     display: none;
