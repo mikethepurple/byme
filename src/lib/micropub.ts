@@ -17,6 +17,8 @@ export interface Incoming {
   categories: string[];
   photos: Photo[];
   link: string;
+  /** What arrived, for the commit message: field names, types and short text values (never files or the key). */
+  received?: string;
 }
 
 export class MicropubError extends Error {
@@ -90,6 +92,9 @@ export async function parseMicropubRequest(req: Request): Promise<Incoming> {
   // file part; read those as text. Pictures stay files.
   const raw = fd;
   fd = new FormData();
+  inc.received = [...raw.entries()]
+    .map(([k, v]) => (typeof v === 'string' ? `${k}=${JSON.stringify(v.slice(0, 40))}` : `${k}:file(${v.type || '?'},${v.size}b)`))
+    .join(' ');
   for (const [k, v] of raw.entries()) {
     const base = k.replace(/\[\]$/, '');
     if (typeof v !== 'string' && base !== 'photo' && v.size < 64_000 && !/^image\//.test(v.type)) {

@@ -105,7 +105,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const date = storedDateFor(inc, new Date(), env.requestZone);
     const slug = slugFor(date, await listPostSlugs(gh));
     const { files } = buildPost({ slug, date, name: inc.name, content: inc.content, things, link: inc.link, photos });
-    await commitFiles(gh, files, `Post ${slug}`);
+    await commitFiles(gh, files, `Post ${slug}${inc.received ? `\n\nReceived: ${inc.received}` : ''}`);
 
     const postUrl = `${new URL(request.url).origin}/${slug}`;
     return new Response(null, { status: 201, headers: { Location: postUrl } });
