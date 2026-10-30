@@ -1,35 +1,28 @@
 ---
-// The right pane: navigation only, the same on every page. Three groups, one
-// shape inside each. Projects are places (big numbered rows, the number in the
-// project's colour). Posts: Everything is the place (every post, whatever its
-// project), with its filters by kind and by time underneath, which combine;
-// "all" and "all time" clear their own filter. A project's own filters sit in
-// its head on the left, not here.
+// The right pane: navigation only, the same on every page. Three filter rows of
+// one shape — project, kind, when — each with its own "all" first, and they
+// combine (Ada's photos in October). All three on "all" is everything. The
+// project's number carries its colour, as on the cells and the project head.
 import type { Post, Thing, Scope } from '../lib/load';
 
 interface Props {
   things: Thing[];
-  posts: Post[]; // all posts, for the When list
+  posts: Post[]; // all posts, for the When row
   scope?: Scope; // what is in force
-  where?: 'front' | 'feed' | 'project' | 'post'; // the filters mark only on feed pages
+  where?: 'front' | 'browse' | 'post'; // the rows mark only while browsing
 }
 
-const { things, posts, scope = {}, where = 'feed' } = Astro.props;
+const { things, posts, scope = {}, where = 'browse' } = Astro.props;
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const months = Array.from(new Set(posts.map((p) => p.data.date.slice(0, 7)))).sort().reverse();
 const years = Array.from(new Set(months.map((m) => m.slice(0, 4))));
 
-const feed = where === 'feed';
-const { lane, month } = scope;
-const monthBase = month ? `/${month}` : '';
-const laneTail = lane ? `/${lane}` : '';
-const kinds = [
-  { id: 'all', href: monthBase || '/everything', on: feed && !lane },
-  { id: 'photos', href: `${monthBase}/photos`, on: feed && lane === 'photos' },
-  { id: 'longreads', href: `${monthBase}/longreads`, on: feed && lane === 'longreads' },
-  { id: 'notes', href: `${monthBase}/notes`, on: feed && lane === 'notes' },
-];
+const marks = where === 'browse';
+const { thing, lane, month } = scope;
+// An address is /<project>/<month>/<kind>, each part optional; none at all is /everything.
+const at = (t?: string, m?: string, l?: string) => `${t ? `/${t}` : ''}${m ? `/${m}` : ''}${l ? `/${l}` : ''}` || '/everything';
+const tint = (c: string) => `--c: ${c}`;
 ---
 
 <div class="brand-row">
@@ -37,39 +30,39 @@ const kinds = [
 </div>
 
 <nav id="nav" class="nav">
-  <h2 class="label small">Projects</h2>
-  {
-    things.map((t, i) => (
-      <a href={`/${t.id}`} class:list={['row', { on: scope.thing === t.id, tint: !!t.data.color }]} style={t.data.color ? `--c: ${t.data.color}` : undefined}>
-        <span class:list={['n', 'small', { tint: !!t.data.color }]}>
-          {String(i + 1).padStart(2, '0')}
-        </span>
-        <span class="name">{t.data.name}</span>
-      </a>
-    ))
-  }
-
-  <h2 class="label small">Posts</h2>
-  <a href="/everything" class:list={['row', 'every', { on: feed }]}>
-    <span class="name">Everything</span>
-    <span class="gloss small">all posts, from every project and from none</span>
-  </a>
+  <div class="filter">
+    <span class="k small">project</span>
+    <span class="options">
+      <a href={at(undefined, month, lane)} class:list={[{ on: marks && !thing }]}>all</a>
+      {
+        things.map((t, i) => (
+          <a href={at(t.id, month, lane)} class:list={['project', { on: marks && thing === t.id, tint: !!t.data.color }]} style={t.data.color ? tint(t.data.color) : undefined}>
+            <span class:list={['n', 'small', { tint: !!t.data.color }]}>{String(i + 1).padStart(2, '0')}</span>
+            {t.data.name}
+          </a>
+        ))
+      }
+    </span>
+  </div>
   <div class="filter">
     <span class="k small">kind</span>
-    <span class="options">{kinds.map((k) => <a href={k.href} class:list={[{ on: k.on }]}>{k.id}</a>)}</span>
+    <span class="options">
+      <a href={at(thing, month)} class:list={[{ on: marks && !lane }]}>all</a>
+      {(['photos', 'longreads', 'notes'] as const).map((l) => <a href={at(thing, month, l)} class:list={[{ on: marks && lane === l }]}>{l}</a>)}
+    </span>
   </div>
   <div class="filter">
     <span class="k small">when</span>
     <span class="options">
-      <a href={laneTail || '/everything'} class:list={[{ on: feed && !month }]}>all time</a>
+      <a href={at(thing, undefined, lane)} class:list={[{ on: marks && !month }]}>all time</a>
       {
         years.map((y) => (
           <>
-            <a href={`/${y}${laneTail}`} class:list={['year', { on: feed && y === month }]}>{y}</a>
+            <a href={at(thing, y, lane)} class:list={['year', { on: marks && y === month }]}>{y}</a>
             {months
               .filter((m) => m.startsWith(y))
               .map((m) => (
-                <a href={`/${m}${laneTail}`} class:list={[{ on: feed && m === month }]}>{MONTHS[+m.slice(5, 7) - 1]}</a>
+                <a href={at(thing, m, lane)} class:list={[{ on: marks && m === month }]}>{MONTHS[+m.slice(5, 7) - 1]}</a>
               ))}
           </>
         ))
@@ -88,55 +81,28 @@ const kinds = [
   .brand { display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; font-weight: 500; }
   .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
 
-  .label {
-    font-weight: 400;
-    color: var(--ink-3);
-    margin: 0;
-    padding: 22px var(--page-pad) 6px;
-    border-bottom: 1px solid var(--line);
-  }
-
-  /* a project: a place */
-  .row {
-    display: grid;
-    grid-template-columns: 2.5rem minmax(0, 1fr);
-    gap: 1rem;
-    align-items: baseline;
-    min-height: 48px;
-    padding: 12px var(--page-pad);
-    border-bottom: 1px solid var(--line);
-    color: var(--ink);
-    text-decoration: none;
-  }
-  .row .n { color: var(--ink-3); }
-  .row .n.tint { font-weight: 500; color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
-  .name { font-size: 1.125rem; font-weight: 500; letter-spacing: -0.01em; }
-  .row:hover .name { text-decoration: underline; text-decoration-color: var(--accent-ink); text-underline-offset: 4px; }
-  .row.on .name { color: var(--accent-ink); }
-  /* a project's row underlines and marks in the project's own colour */
-  .row.tint:hover .name { text-decoration-color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
-  .row.tint.on .name { color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
-
-  /* everything: a place with a line saying what it is */
-  .row.every { grid-template-columns: minmax(0, 1fr); gap: 2px; align-items: start; }
-  .gloss { color: var(--ink-3); }
-
-  /* a filter on everything: its label in the number column, the options after */
+  /* one row per axis: its name in the left column, the options after */
   .filter {
     display: grid;
-    grid-template-columns: 2.5rem minmax(0, 1fr);
+    grid-template-columns: 4rem minmax(0, 1fr);
     gap: 1rem;
     align-items: baseline;
-    padding: 12px var(--page-pad);
+    padding: 14px var(--page-pad);
     border-bottom: 1px solid var(--line);
   }
   .filter .k { color: var(--ink-3); }
-  .options { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; }
+  .options { display: flex; flex-wrap: wrap; gap: 0.35rem 1.1rem; }
   .options a { color: var(--ink-2); text-decoration: none; }
-  .options a:hover { color: var(--ink); text-decoration: underline; }
+  .options a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
   .options a.on { color: var(--accent-ink); }
   .options .year { color: var(--ink); }
   .options .year.on { color: var(--accent-ink); }
+
+  /* a project: its number in its colour; marked and underlined in its colour too */
+  .project .n { margin-right: 0.3rem; color: var(--ink-3); }
+  .project .n.tint { font-weight: 500; color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
+  .project.tint:hover { text-decoration-color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
+  .project.tint.on { color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
 
   .foot { display: flex; gap: 1rem; padding: 12px var(--page-pad); border-bottom: 1px solid var(--line); }
   .foot a, .theme-toggle { color: var(--ink-3); text-decoration: none; }

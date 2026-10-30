@@ -42,15 +42,19 @@ export async function getStaticPaths() {
 
   paths.push({ params: { slug: 'everything' }, props: { type: 'browse' } });
   for (const lane of LANES) paths.push({ params: { slug: lane }, props: { type: 'browse', lane } });
-  for (const t of things) {
-    if (reserved.has(t.id) || /^\d{4}-\d\d/.test(t.id)) throw new Error(`Thing slug "${t.id}" is reserved`);
-    paths.push({ params: { slug: t.id }, props: { type: 'browse', thing: t.id } });
-    for (const lane of LANES) paths.push({ params: { slug: `${t.id}/${lane}` }, props: { type: 'browse', thing: t.id, lane } });
-  }
-  // A month (2026-10) or a whole year (2026) narrows the feed the same way: by prefix.
-  for (const m of [...yearsOf(posts), ...monthsOf(posts)]) {
-    paths.push({ params: { slug: m }, props: { type: 'browse', month: m } });
-    for (const lane of LANES) paths.push({ params: { slug: `${m}/${lane}` }, props: { type: 'browse', month: m, lane } });
+  // Every combination of project × when × kind has an address:
+  // /<project>/<month>/<kind>, each part optional. A month (2026-10) or a whole
+  // year (2026) narrows the same way, by prefix.
+  const whens = [...yearsOf(posts), ...monthsOf(posts)];
+  for (const t of things) if (reserved.has(t.id) || /^\d{4}-\d\d/.test(t.id)) throw new Error(`Thing slug "${t.id}" is reserved`);
+  for (const thing of [undefined, ...things.map((t) => t.id)]) {
+    for (const month of [undefined, ...whens]) {
+      for (const lane of [undefined, ...LANES]) {
+        const slug = [thing, month, lane].filter(Boolean).join('/');
+        if (!slug) continue; // that is /everything
+        paths.push({ params: { slug }, props: { type: 'browse', thing, month, lane } });
+      }
+    }
   }
   for (let n = 2; (n - 1) * PAGE_SIZE < posts.length; n++) {
     paths.push({ params: { slug: `page/${n}` }, props: { type: 'browse', page: n } });
@@ -113,7 +117,7 @@ if (props.type === 'browse') {
 
 <TwoPane title={title} description={description} image={image} type={props.type === 'read' ? 'article' : 'website'}>
   <Fragment slot="content">
-    {head && <ProjectHead thing={head.thing} index={head.index} lane={scope.lane} />}
+    {head && <ProjectHead thing={head.thing} index={head.index} />}
     {props.type === 'browse' && <Grid items={items} names={names} colors={colors} />}
     {
       (older || newer) && (
@@ -133,7 +137,7 @@ if (props.type === 'browse') {
       )
     }
   </Fragment>
-  <Nav slot="side" things={things} posts={posts} scope={scope} where={props.type === 'read' ? 'post' : scope.thing ? 'project' : 'feed'} />
+  <Nav slot="side" things={things} posts={posts} scope={scope} where={props.type === 'read' ? 'post' : 'browse'} />
 </TwoPane>
 
 <style>

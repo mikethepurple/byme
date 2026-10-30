@@ -1,23 +1,16 @@
 ---
 // The top of a project page: number (in the project's colour), name, the one
-// line, where to try it, and the project's own filters by kind. A small
-// picture on the right. Its posts follow as a grid.
+// line, where to try it, a small picture on the right. Its posts follow as a
+// grid; the column's kind and when rows narrow them.
 import { Image } from 'astro:assets';
-import type { Thing, Lane } from '../lib/load';
+import type { Thing } from '../lib/load';
 
 interface Props {
   thing: Thing;
   index: number;
-  lane?: Lane;
 }
 
-const { thing, index, lane } = Astro.props;
-const tabs: { id: Lane | 'all'; href: string }[] = [
-  { id: 'all', href: `/${thing.id}` },
-  { id: 'photos', href: `/${thing.id}/photos` },
-  { id: 'longreads', href: `/${thing.id}/longreads` },
-  { id: 'notes', href: `/${thing.id}/notes` },
-];
+const { thing, index } = Astro.props;
 ---
 
 <header class="head">
@@ -36,9 +29,6 @@ const tabs: { id: Lane | 'all'; href: string }[] = [
         </p>
       )
     }
-    <nav class="tabs">
-      {tabs.map((t) => <a href={t.href} class:list={[{ on: t.id === 'all' ? !lane : t.id === lane }]}>{t.id}</a>)}
-    </nav>
   </div>
   {
     thing.data.cover && (
@@ -68,10 +58,6 @@ const tabs: { id: Lane | 'all'; href: string }[] = [
   }
   .line { max-width: 44ch; margin: 1rem 0 0; color: var(--ink-2); font-size: 1.0625rem; }
   .try { display: flex; gap: 1.25rem; margin: 0.75rem 0 0; }
-  .tabs { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; margin-top: 1.5rem; }
-  .tabs a { color: var(--ink-2); text-decoration: none; }
-  .tabs a:hover { color: var(--ink); text-decoration: underline; }
-  .tabs a.on { color: var(--accent-ink); }
   .cover { justify-self: end; width: 100%; }
   .cover :global(img) { width: 100%; height: auto; }
 
