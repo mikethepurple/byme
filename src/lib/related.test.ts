@@ -33,6 +33,11 @@ describe('frontCells — the front grid: the projects, then what he pinned', () 
     const cells = frontCells(things, posts.map((p) => ({ ...p, pinned: false })));
     expect(cells).toHaveLength(3);
   });
+  it('then the latest posts, newest first, skipping the pinned ones, up to n', () => {
+    const ids = (cs: ReturnType<typeof frontCells>) => cs.map((c) => (c.kind === 'thing' ? `thing:${c.thing.id}` : `post:${c.post.id}`));
+    expect(ids(frontCells(things, posts, 2))).toEqual(['thing:ada', 'thing:detourist', 'thing:manga', 'post:p3', 'post:p2', 'post:p5', 'post:p4']);
+    expect(ids(frontCells(things, posts, 10)).slice(5)).toEqual(['post:p5', 'post:p4', 'post:p1']);
+  });
 });
 
 describe('similar — the posts shown beside an open one', () => {

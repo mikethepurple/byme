@@ -1,37 +1,34 @@
 ---
-// The right pane: the name, then everything you can pick (projects, when,
-// kind), then rss and the theme toggle. Below it, a short list of posts that
-// belongs to the page: the latest on the front, similar ones beside an open post.
-// Nothing here carries a transition name; the left pane does the morphing.
-import { Image } from 'astro:assets';
-import { formatShort } from '../lib/posts';
-import { firstLine, type Post, type Thing, type Scope } from '../lib/load';
+// The right pane: navigation only, the same on every page. Three groups, one
+// shape inside each. Projects are places (big numbered rows, the number in the
+// project's colour). Posts and When are filters on the feed and combine with
+// each other; "all" and "all time" clear their own filter. A project's own
+// filters sit in its head on the left, not here.
+import type { Post, Thing, Scope } from '../lib/load';
 
 interface Props {
   things: Thing[];
   posts: Post[]; // all posts, for the When list
-  names?: Map<string, string>;
-  scope?: Scope; // what is marked
-  where?: 'front' | 'browse' | 'read';
-  related?: { title: string; posts: Post[] };
+  scope?: Scope; // what is in force
+  where?: 'front' | 'feed' | 'project' | 'post'; // the filters mark only on feed pages
 }
 
-const { things, posts, scope = {}, where = 'browse', related } = Astro.props;
-const names = Astro.props.names ?? new Map(things.map((t) => [t.id, t.data.name]));
+const { things, posts, scope = {}, where = 'feed' } = Astro.props;
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const months = Array.from(new Set(posts.map((p) => p.data.date.slice(0, 7)))).sort().reverse();
 const years = Array.from(new Set(months.map((m) => m.slice(0, 4))));
 
-// Where the kind links live: inside the project or month in force.
-const base = scope.thing ? `/${scope.thing}` : scope.month ? `/${scope.month}` : '';
+const feed = where === 'feed';
+const { lane, month } = scope;
+const monthBase = month ? `/${month}` : '';
+const laneTail = lane ? `/${lane}` : '';
 const kinds = [
-  { id: 'all', href: base || '/everything', on: where === 'browse' && !scope.lane },
-  { id: 'photos', href: `${base}/photos`, on: scope.lane === 'photos' },
-  { id: 'longreads', href: `${base}/longreads`, on: scope.lane === 'longreads' },
-  { id: 'notes', href: `${base}/notes`, on: scope.lane === 'notes' },
+  { id: 'all', href: monthBase || '/everything', on: feed && !lane },
+  { id: 'photos', href: `${monthBase}/photos`, on: feed && lane === 'photos' },
+  { id: 'longreads', href: `${monthBase}/longreads`, on: feed && lane === 'longreads' },
+  { id: 'notes', href: `${monthBase}/notes`, on: feed && lane === 'notes' },
 ];
-const everythingOn = where === 'browse' && !scope.thing;
 ---
 
 <div class="brand-row">
@@ -39,11 +36,7 @@ const everythingOn = where === 'browse' && !scope.thing;
 </div>
 
 <nav id="nav" class="nav">
-  <h2 class="label small">Projects I'm working on</h2>
-  <a href="/everything" class:list={['row', { on: everythingOn }]}>
-    <span class="n small"></span>
-    <span class="name">everything</span>
-  </a>
+  <h2 class="label small">Projects</h2>
   {
     things.map((t, i) => (
       <a href={`/${t.id}`} class:list={['row', { on: scope.thing === t.id }]}>
@@ -55,66 +48,33 @@ const everythingOn = where === 'browse' && !scope.thing;
     ))
   }
 
-  <h2 class="label small">When</h2>
-  <a href={scope.thing ? `/${scope.thing}` : '/everything'} class:list={['row', 'plain', { on: where === 'browse' && !scope.month }]}>
-    all time
-  </a>
-  {
-    years.map((y) => (
-      <div class="row plain year">
-        <a href={`/${y}`} class:list={[{ on: y === scope.month }]}>{y}</a>
-        <span class="months">
-          {months
-            .filter((m) => m.startsWith(y))
-            .map((m) => (
-              <a href={`/${m}`} class:list={[{ on: m === scope.month }]}>{MONTHS[+m.slice(5, 7) - 1]}</a>
-            ))}
-        </span>
-      </div>
-    ))
-  }
-
-  <h2 class="label small">Kind</h2>
-  <div class="row plain kinds">
+  <h2 class="label small">Posts</h2>
+  <div class="options">
     {kinds.map((k) => <a href={k.href} class:list={[{ on: k.on }]}>{k.id}</a>)}
   </div>
 
-  <div class="row plain foot small">
+  <h2 class="label small">When</h2>
+  <div class="options">
+    <a href={laneTail || '/everything'} class:list={[{ on: feed && !month }]}>all time</a>
+    {
+      years.map((y) => (
+        <>
+          <a href={`/${y}${laneTail}`} class:list={['year', { on: feed && y === month }]}>{y}</a>
+          {months
+            .filter((m) => m.startsWith(y))
+            .map((m) => (
+              <a href={`/${m}${laneTail}`} class:list={[{ on: feed && m === month }]}>{MONTHS[+m.slice(5, 7) - 1]}</a>
+            ))}
+        </>
+      ))
+    }
+  </div>
+
+  <div class="options foot small">
     <a href="/rss.xml">rss</a>
     <button type="button" class="theme-toggle" aria-label="Switch between light and dark">dark</button>
   </div>
 </nav>
-
-{
-  related && related.posts.length > 0 && (
-    <section class="related">
-      <h2 class="label small">{related.title}</h2>
-      {related.posts.map((p) => (
-        <a href={`/${p.id}`} class="rel">
-          {p.data.images[0] && (
-            <span class="thumb">
-              <Image src={p.data.images[0]} alt="" widths={[120, 240]} sizes="60px" loading="lazy" />
-            </span>
-          )}
-          <span class="what">
-            {(() => {
-              const t = p.data.title || firstLine(p.plain, 70) || (p.data.link ? p.data.link.replace(/^https?:\/\//, '') : '');
-              const d = [p.kind, ...p.things.map((id) => names.get(id) ?? id), formatShort(p.data.date)].join(' · ');
-              return t ? (
-                <>
-                  <span class="t">{t}</span>
-                  <span class="d small">{d}</span>
-                </>
-              ) : (
-                <span class="t">{d}</span>
-              );
-            })()}
-          </span>
-        </a>
-      ))}
-    </section>
-  )
-}
 
 <style>
   .brand-row { padding: 14px var(--page-pad); border-bottom: 1px solid var(--line); }
@@ -125,10 +85,11 @@ const everythingOn = where === 'browse' && !scope.thing;
     font-weight: 400;
     color: var(--ink-3);
     margin: 0;
-    padding: 18px var(--page-pad) 6px;
+    padding: 22px var(--page-pad) 6px;
     border-bottom: 1px solid var(--line);
   }
 
+  /* a project: a place */
   .row {
     display: grid;
     grid-template-columns: 2.5rem minmax(0, 1fr);
@@ -140,38 +101,27 @@ const everythingOn = where === 'browse' && !scope.thing;
     color: var(--ink);
     text-decoration: none;
   }
-  .row.plain { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; }
   .row .n { color: var(--ink-3); }
   .row .n.tint { font-weight: 500; color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
   .name { font-size: 1.125rem; font-weight: 500; letter-spacing: -0.01em; }
-  a.row:hover .name { text-decoration: underline; text-decoration-color: var(--accent-ink); text-underline-offset: 4px; }
-  .row.on .name, .row.plain.on, .row.plain a.on { color: var(--accent-ink); }
+  .row:hover .name { text-decoration: underline; text-decoration-color: var(--accent-ink); text-underline-offset: 4px; }
+  .row.on .name { color: var(--accent-ink); }
 
-  .year { display: grid; grid-template-columns: 4rem minmax(0, 1fr); }
-  .year a, .kinds a, .months a { text-decoration: none; color: var(--ink); }
-  .year a:hover, .kinds a:hover, .months a:hover { text-decoration: underline; }
-  .months { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; }
-  .kinds a { color: var(--ink-2); }
-  .kinds a.on { color: var(--accent-ink); }
-
-  .foot a, .theme-toggle { color: var(--ink-2); text-decoration: none; }
-  .foot a:hover, .theme-toggle:hover { color: var(--ink); }
-  .theme-toggle { font: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
-
-  .related { margin-top: 28px; }
-  .rel {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: 0 14px;
-    align-items: center;
+  /* a filter: its options in one row */
+  .options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
     padding: 12px var(--page-pad);
     border-bottom: 1px solid var(--line);
-    text-decoration: none;
-    color: var(--ink);
   }
-  .rel:hover .t { text-decoration: underline; text-decoration-color: var(--accent-ink); text-underline-offset: 3px; }
-  .thumb { width: 60px; height: 60px; display: block; }
-  .thumb :global(img) { width: 60px; height: 60px; object-fit: cover; }
-  .what { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .options a { color: var(--ink-2); text-decoration: none; }
+  .options a:hover { color: var(--ink); text-decoration: underline; }
+  .options a.on { color: var(--accent-ink); }
+  .options .year { color: var(--ink); }
+  .options .year.on { color: var(--accent-ink); }
+
+  .foot a, .theme-toggle { color: var(--ink-3); }
+  .foot a:hover, .theme-toggle:hover { color: var(--ink); }
+  .theme-toggle { font: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 </style>

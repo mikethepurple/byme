@@ -76,7 +76,7 @@ let items: Item[] = [];
 let older: string | undefined;
 let newer: string | undefined;
 let head: { thing: Thing; index: number } | undefined;
-let related: { title: string; posts: Post[] } | undefined;
+let similarItems: Item[] = [];
 
 if (props.type === 'browse') {
   scope = { thing: props.thing, lane: props.lane, month: props.month };
@@ -107,14 +107,13 @@ if (props.type === 'browse') {
   title = p.data.title || firstLine(p.plain) || `${p.kind} · ${formatDate(p.data.date)}`;
   description = p.text ? firstLine(p.plain, 160) : undefined;
   image = p.data.images[0]?.src;
-  scope = { thing: p.things[0] };
-  related = { title: 'Similar posts', posts: similar(p, posts, SIMILAR) };
+  similarItems = similar(p, posts, SIMILAR).map((post) => ({ kind: 'post', post }));
 }
 ---
 
 <TwoPane title={title} description={description} image={image} type={props.type === 'read' ? 'article' : 'website'}>
   <Fragment slot="content">
-    {head && <ProjectHead thing={head.thing} index={head.index} />}
+    {head && <ProjectHead thing={head.thing} index={head.index} lane={scope.lane} />}
     {props.type === 'browse' && <Grid items={items} names={names} colors={colors} />}
     {
       (older || newer) && (
@@ -125,11 +124,20 @@ if (props.type === 'browse') {
       )
     }
     {props.type === 'read' && <PostView post={props.post} names={names} colors={colors} newer={props.prev} older={props.next} />}
+    {
+      props.type === 'read' && similarItems.length > 0 && (
+        <section class="similar">
+          <h2 class="label small">Similar posts</h2>
+          <Grid items={similarItems} names={names} colors={colors} />
+        </section>
+      )
+    }
   </Fragment>
-  <Nav slot="side" things={things} posts={posts} scope={scope} where={props.type} related={related} />
+  <Nav slot="side" things={things} posts={posts} scope={scope} where={props.type === 'read' ? 'post' : scope.thing ? 'project' : 'feed'} />
 </TwoPane>
 
 <style>
+  .similar .label { font-weight: 400; color: var(--ink-3); margin: 0; padding: 22px var(--page-pad) 6px; }
   .pages { display: flex; justify-content: space-between; padding: 1rem var(--page-pad) 2rem; }
   .pages a { color: var(--ink-2); text-decoration: none; }
   .pages a:hover { color: var(--ink); }

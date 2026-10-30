@@ -1,20 +1,30 @@
 ---
-// The top of a project page: number, name, the one line, where to try it, a
-// small picture. Its posts follow as a grid.
+// The top of a project page: number (in the project's colour), name, the one
+// line, where to try it, and the project's own filters by kind. A small
+// picture on the right. Its posts follow as a grid.
 import { Image } from 'astro:assets';
-import type { Thing } from '../lib/load';
+import type { Thing, Lane } from '../lib/load';
 
 interface Props {
   thing: Thing;
   index: number;
+  lane?: Lane;
 }
 
-const { thing, index } = Astro.props;
+const { thing, index, lane } = Astro.props;
+const tabs: { id: Lane | 'all'; href: string }[] = [
+  { id: 'all', href: `/${thing.id}` },
+  { id: 'photos', href: `/${thing.id}/photos` },
+  { id: 'longreads', href: `/${thing.id}/longreads` },
+  { id: 'notes', href: `/${thing.id}/notes` },
+];
 ---
 
 <header class="head">
   <div class="text">
-    <span class="n small">{String(index).padStart(2, '0')}</span>
+    <span class:list={['n', 'small', { tint: !!thing.data.color }]} style={thing.data.color ? `--c: ${thing.data.color}` : undefined}>
+      {String(index).padStart(2, '0')}
+    </span>
     <h1 class="name" transition:name={`thing-${thing.id}`}>{thing.data.name}</h1>
     {thing.data.line && <p class="line">{thing.data.line}</p>}
     {
@@ -26,6 +36,9 @@ const { thing, index } = Astro.props;
         </p>
       )
     }
+    <nav class="tabs">
+      {tabs.map((t) => <a href={t.href} class:list={[{ on: t.id === 'all' ? !lane : t.id === lane }]}>{t.id}</a>)}
+    </nav>
   </div>
   {
     thing.data.cover && (
@@ -45,6 +58,7 @@ const { thing, index } = Astro.props;
     padding: 28px var(--pad-wide) 28px;
   }
   .n { color: var(--ink-3); }
+  .n.tint { font-weight: 500; color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
   .name {
     font-size: clamp(2.5rem, 7cqw, 4.5rem);
     font-weight: 500;
@@ -54,6 +68,10 @@ const { thing, index } = Astro.props;
   }
   .line { max-width: 44ch; margin: 1rem 0 0; color: var(--ink-2); font-size: 1.0625rem; }
   .try { display: flex; gap: 1.25rem; margin: 0.75rem 0 0; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; margin-top: 1.5rem; }
+  .tabs a { color: var(--ink-2); text-decoration: none; }
+  .tabs a:hover { color: var(--ink); text-decoration: underline; }
+  .tabs a.on { color: var(--accent-ink); }
   .cover { justify-self: end; width: 100%; }
   .cover :global(img) { width: 100%; height: auto; }
 

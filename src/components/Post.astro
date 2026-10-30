@@ -26,7 +26,7 @@ const link = post.data.link || '';
     <time datetime={post.when.toISOString()}>{formatDate(post.data.date)}</time>
     {offset && <span class="zone"> UTC{offset === 'Z' ? '' : offset}</span>}
     <span class="sep"> · </span>
-    <span class={`k-${post.kind}`}>{post.kind}</span>
+    {post.kind}
     {
       post.things.map((id) => (
         <>

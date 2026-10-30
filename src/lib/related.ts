@@ -11,10 +11,19 @@ export interface Like {
 
 export type FrontCell<T extends { id: string }, P extends Like> = { kind: 'thing'; thing: T } | { kind: 'post'; post: P };
 
-/** The front page: the projects in their order, then whatever he pinned, newest first. */
-export function frontCells<T extends { id: string }, P extends Like>(things: T[], posts: P[]): FrontCell<T, P>[] {
+/**
+ * The front page: the projects in their order, then whatever he pinned, then
+ * the latest posts that are not pinned, up to `latest` — all newest first.
+ */
+export function frontCells<T extends { id: string }, P extends Like>(things: T[], posts: P[], latest = 0): FrontCell<T, P>[] {
   const cells: FrontCell<T, P>[] = things.map((thing) => ({ kind: 'thing', thing }));
   for (const post of posts) if (post.pinned) cells.push({ kind: 'post', post });
+  let n = 0;
+  for (const post of posts) {
+    if (post.pinned || n >= latest) continue;
+    cells.push({ kind: 'post', post });
+    n++;
+  }
   return cells;
 }
 
