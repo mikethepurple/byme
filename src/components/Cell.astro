@@ -4,8 +4,10 @@
 // Longread) with the number or date on the right, then a box inside the same
 // margins. Text is cut at the box's bottom; a picture fills the box, cropped;
 // a set is a strip of such pictures you swipe through.
+// The label's words are links of their own (Photo → the photos, Ada → the
+// project); the rest of the cell opens the post.
 import { Image } from 'astro:assets';
-import { formatShort } from '../lib/posts';
+import { formatShort, laneOf } from '../lib/posts';
 import type { Post, Thing } from '../lib/load';
 
 interface Props {
@@ -24,66 +26,71 @@ const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } 
 
 {
   thing && (
-    <a href={`/${thing.id}`} class="cell thing">
-      <div class="top">
+    <article class="cell thing">
+      <div class="top small">
         <span class="what">Project</span>
-        <span class="when small">{String(index).padStart(2, '0')}</span>
+        <span class="when">{String(index).padStart(2, '0')}</span>
       </div>
-      <div class="box">
-        <span class="name" transition:name={`thing-${thing.id}`}>{thing.data.name}</span>
-        {thing.data.line && <p class="line">{thing.data.line}</p>}
-      </div>
-    </a>
+      <a href={`/${thing.id}`} class="box">
+        <div class="inner">
+          <span class="name" transition:name={`thing-${thing.id}`}>{thing.data.name}</span>
+          {thing.data.line && <p class="line">{thing.data.line}</p>}
+        </div>
+      </a>
+    </article>
   )
 }
 
 {
   post && (
-    <a href={`/${post.id}`} class={`cell post kind-${post.kind}`} transition:name={`post-${post.id}`}>
-      <div class="top">
+    <article class={`cell post kind-${post.kind}`} transition:name={`post-${post.id}`}>
+      <div class="top small">
         <span class="what">
-          {KIND[post.kind]}
-          {post.things.length > 0 && (
+          <a href={`/${laneOf(post.kind)}`}>{KIND[post.kind]}</a>
+          {post.things.map((id) => (
             <>
               <span class="sep"> · </span>
-              <span class="who">{post.things.map((id) => names.get(id) ?? id).join(', ')}</span>
+              <a href={`/${id}`} class="who">{names.get(id) ?? id}</a>
             </>
-          )}
+          ))}
         </span>
-        <span class="when small">{formatShort(post.data.date)}</span>
+        <span class="when">{formatShort(post.data.date)}</span>
       </div>
-      <div class="box">
-        {imgs.length === 1 && (
-          <div class="photo">
-            <Image src={imgs[0]} alt={post.data.title || ''} widths={[480, 960]} sizes="(max-width: 900px) 100vw, 33vw" loading="lazy" />
-          </div>
-        )}
-        {imgs.length > 1 && (
-          <div class="photo strip" data-strip>
-            <div class="slides">
-              {imgs.slice(0, 6).map((img) => (
-                <div class="slide">
-                  <Image src={img} alt="" widths={[480, 960]} sizes="(max-width: 900px) 100vw, 33vw" loading="lazy" />
-                </div>
-              ))}
+      <a href={`/${post.id}`} class="box" aria-label={post.data.title || KIND[post.kind]}>
+        <div class="inner">
+          {imgs.length === 1 && (
+            <div class="photo">
+              <Image src={imgs[0]} alt={post.data.title || ''} widths={[480, 960]} sizes="(max-width: 900px) 100vw, 33vw" loading="lazy" />
             </div>
-            <div class="dots">{imgs.slice(0, 6).map((_, i) => <i class:list={[{ on: i === 0 }]} />)}</div>
-          </div>
-        )}
-        {imgs.length === 0 && (
-          <div class="text">
-            {post.data.title && <span class="title">{post.data.title}</span>}
-            {link && !post.text && <span class="href">{hostOf(link)}</span>}
-            {post.text && <span class="body">{post.plain}</span>}
-          </div>
-        )}
-      </div>
-    </a>
+          )}
+          {imgs.length > 1 && (
+            <div class="photo strip" data-strip>
+              <div class="slides">
+                {imgs.slice(0, 6).map((img) => (
+                  <div class="slide">
+                    <Image src={img} alt="" widths={[480, 960]} sizes="(max-width: 900px) 100vw, 33vw" loading="lazy" />
+                  </div>
+                ))}
+              </div>
+              <div class="dots">{imgs.slice(0, 6).map((_, i) => <i class:list={[{ on: i === 0 }]} />)}</div>
+            </div>
+          )}
+          {imgs.length === 0 && (
+            <div class="text">
+              {post.data.title && <span class="title">{post.data.title}</span>}
+              {link && !post.text && <span class="href">{hostOf(link)}</span>}
+              {post.text && <span class="body">{post.plain}</span>}
+            </div>
+          )}
+        </div>
+      </a>
+    </article>
   )
 }
 
 <style>
   .cell {
+    position: relative;
     display: flex;
     flex-direction: column;
     aspect-ratio: 1 / 1;
@@ -92,11 +99,10 @@ const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } 
     border-right: 1px solid var(--line);
     border-bottom: 1px solid var(--line);
     color: var(--ink);
-    text-decoration: none;
     container-type: inline-size;
   }
 
-  /* the label row: what it is, and its number or date */
+  /* the label row: what it is (each word its own link), and the number or date */
   .top {
     flex: none;
     display: flex;
@@ -106,19 +112,24 @@ const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } 
     padding: 12px var(--page-pad) 0;
   }
   .what { color: var(--ink); font-weight: 500; }
+  .what a { position: relative; z-index: 1; color: inherit; text-decoration: none; }
+  .what a:hover { text-decoration: underline; text-decoration-color: var(--accent-ink); text-underline-offset: 3px; }
   .sep { color: var(--ink-3); font-weight: 400; }
-  .who { color: var(--accent-ink); }
+  .what a.who { color: var(--accent-ink); }
   .when { color: var(--ink-3); }
-  .cell:hover .what { text-decoration: underline; text-decoration-color: var(--accent-ink); text-underline-offset: 4px; }
 
-  /* the box: everything sits inside the same margins */
+  /* the box: everything sits inside the same margins; the link stretches over
+     the whole cell, under the label's own links */
   .box {
+    display: block;
     flex: 1 1 auto;
     min-height: 0;
-    position: relative;
     margin: 12px var(--page-pad) var(--page-pad);
-    overflow: hidden;
+    color: inherit;
+    text-decoration: none;
   }
+  .box::after { content: ''; position: absolute; inset: 0; }
+  .inner { position: relative; height: 100%; overflow: hidden; }
 
   /* a project: its name and line, nothing else */
   .name {
@@ -128,12 +139,14 @@ const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } 
     letter-spacing: -0.02em;
     line-height: 1;
   }
-  .cell:hover .name { text-decoration: underline; text-decoration-color: var(--accent-ink); text-decoration-thickness: 2px; text-underline-offset: 6px; }
+  .box:hover .name { text-decoration: underline; text-decoration-color: var(--accent-ink); text-decoration-thickness: 2px; text-underline-offset: 6px; }
   .line { margin: 0.75rem 0 0; max-width: 30ch; color: var(--ink-2); }
 
-  /* a picture fills the box, cropped; a set is a strip of them */
+  /* a picture fills the box, cropped; a set is a strip of them, above the
+     stretched link so a swipe scrolls it and a tap still opens the post */
   .photo { position: absolute; inset: 0; }
   .photo :global(img) { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .strip { z-index: 1; }
   .slides {
     display: flex;
     height: 100%;
