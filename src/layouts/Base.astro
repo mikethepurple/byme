@@ -19,10 +19,9 @@ const ogImage = image ? new URL(image, Astro.site ?? Astro.url).href : undefined
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#0e0e0e" media="(prefers-color-scheme: dark)" />
-  <meta name="theme-color" content="#f2f1ee" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#f2f1ee" />
   <script is:inline>
-    // Theme: follows the system unless chosen. ?theme=light|dark or the toggle
+    // Theme: paper unless dark is chosen. ?theme=light|dark or the toggle
     // chooses; the choice is remembered in this browser and re-applied after
     // every in-place navigation.
     (function () {
@@ -41,12 +40,10 @@ const ogImage = image ? new URL(image, Astro.site ?? Astro.url).href : undefined
         try { return localStorage.getItem(KEY); } catch (e) { return null; }
       }
       function isDark() {
-        var t = document.documentElement.dataset.theme;
-        return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+        return document.documentElement.dataset.theme === 'dark';
       }
       function apply() {
-        var t = chosen();
-        if (t) document.documentElement.dataset.theme = t;
+        if (chosen() === 'dark') document.documentElement.dataset.theme = 'dark';
         else delete document.documentElement.dataset.theme;
         var label = isDark() ? 'light' : 'dark';
         document.querySelectorAll('.theme-toggle').forEach(function (b) { b.textContent = label; });

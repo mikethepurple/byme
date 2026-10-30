@@ -1,53 +1,25 @@
 :root {
-  color-scheme: dark;
-
-  --bg:      #0e0e0e;
-  --ink:     #ededed;
-  --ink-2:   #9a9a9a;
-  --ink-3:   #5c5c5c;
-  --line:    #262626;
-  --accent:  #f0a020;      /* the dot */
-  --accent-ink: #ffb424;   /* amber as text: marked items */
-
-  --tint-mix: 100%;        /* a project's colour as given; paper darkens it */
-
-  --font-body: "Inter Tight", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: "SF Mono", "Fira Code", monospace;
-
-  --quiet:   #8a8985;      /* labels, dates (hand-over "quiet") */
-  --misc:    #8a8985;      /* the colour of posts with no project */
-  --cell:    380px;        /* every grid cell is this tall */
-  --page-pad: 20px;        /* inside a cell, a menu row, a head: one edge everywhere */
-  --read: 620px;           /* a paragraph, read in full */
-}
-
-/* Light: paper, not white. Follows the system; `?theme=light|dark` on any URL
-   sets data-theme for looking at either one. */
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) {
-    color-scheme: light;
-    --bg:     #f2f1ee;
-    --ink:    #111111;
-    --ink-2:  #6b6a66;
-    --ink-3:  #8a8985;
-    --line:   #dcdad5;
-    --accent-ink: #a8760e;
-    --quiet:  #8a8985;
-    --misc:   #8a8985;
-    --tint-mix: 68%;
-  }
-}
-:root[data-theme="light"] {
+  /* Paper, per the hand-over: the default everywhere. Dark is a choice (the
+     toggle, or ?theme=dark), never the system's. */
   color-scheme: light;
+
   --bg:     #f2f1ee;
   --ink:    #111111;
   --ink-2:  #6b6a66;
   --ink-3:  #8a8985;
   --line:   #dcdad5;
-  --accent-ink: #a8760e;
-  --quiet:  #8a8985;
-  --misc:   #8a8985;
-  --tint-mix: 68%;
+  --accent: #f0a020;       /* the dot */
+  --accent-ink: #a8760e;   /* amber as text */
+  --quiet:  #8a8985;       /* labels, dates (hand-over "quiet") */
+  --misc:   #8a8985;       /* the colour of posts with no project */
+  --tint-mix: 68%;         /* a project's colour, darkened for paper */
+
+  --font-body: "Inter Tight", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "SF Mono", "Fira Code", monospace;
+
+  --cell:    380px;        /* every grid cell is this tall */
+  --page-pad: 20px;        /* inside a cell, a menu row, a head: one edge everywhere */
+  --read: 620px;           /* a paragraph, read in full */
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
@@ -58,8 +30,7 @@
   --line:   #262626;
   --accent-ink: #ffb424;
   --quiet:  #6a6a6a;
-  --misc:   #8a8985;
-  --tint-mix: 100%;
+  --tint-mix: 100%;        /* a project's colour as given */
 }
 
 /* View transitions: one easing and one duration for everything that moves,
