@@ -1,0 +1,22 @@
+---
+// Not found: the shell with an empty grid. Also what lets the Cloudflare
+// adapter route only the on-demand paths through the worker: without a
+// prerendered 404 it sends every request there, and then neither the
+// middleware nor the Pages _redirects file touches a prerendered page.
+import TwoPane from '../layouts/TwoPane.astro';
+import Nav from '../components/Nav.astro';
+import Grid from '../components/Grid.astro';
+import { loadPosts, loadThings, thingNames, thingHues } from '../lib/load';
+
+export const prerender = true;
+
+const things = await loadThings();
+const posts = await loadPosts();
+const names = thingNames(things);
+const hues = thingHues(things);
+---
+
+<TwoPane title="Not found">
+  <Grid slot="content" posts={[]} names={names} hues={hues} message="Nothing at this address." />
+  <Nav slot="side" things={things} posts={posts} hues={hues} where="front" />
+</TwoPane>

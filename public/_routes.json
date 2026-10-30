@@ -1,5 +1,14 @@
 {
   "version": 1,
-  "include": ["/*"],
+  "include": [
+    "/micropub",
+    "/micropub/*",
+    "/keystatic",
+    "/keystatic/*",
+    "/api/keystatic",
+    "/api/keystatic/*",
+    "/auth",
+    "/auth/*"
+  ],
   "exclude": []
 }
