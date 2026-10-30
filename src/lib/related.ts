@@ -1,54 +1,81 @@
-// What goes where, without touching astro:content: the front grid's cells and
-// the posts shown beside an open one. Pure, so they are tested on their own.
+// Small pure helpers behind the cards and the page heads, so they are tested
+// on their own, without astro:content.
+import { formatShort, laneOf, type Kind } from './posts';
 
 /** The little of a post these functions need. */
 export interface Like {
   id: string;
   when: Date;
+  date: string; // as stored
   things: string[]; // thing ids
-  pinned: boolean;
+  kind: Kind;
+  title: string;
+  plain: string;
 }
 
-export type FrontCell<T extends { id: string }, P extends Like> = { kind: 'thing'; thing: T } | { kind: 'post'; post: P };
+/** The pseudo-project of posts that belong to none. */
+export const MISC = 'misc';
 
-/**
- * The front page: the projects in their order, then whatever he pinned, then
- * the latest posts that are not pinned, up to `latest` — all newest first.
- */
-export function frontCells<T extends { id: string }, P extends Like>(things: T[], posts: P[], latest = 0): FrontCell<T, P>[] {
-  const cells: FrontCell<T, P>[] = things.map((thing) => ({ kind: 'thing', thing }));
-  for (const post of posts) if (post.pinned) cells.push({ kind: 'post', post });
-  let n = 0;
-  for (const post of posts) {
-    if (post.pinned || n >= latest) continue;
-    cells.push({ kind: 'post', post });
-    n++;
-  }
-  return cells;
+export const KIND_LABEL: Record<Kind, string> = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' };
+
+/** A post belongs to its first project, or to misc. */
+export function projectOf(p: { things: string[] }): string {
+  return p.things[0] ?? MISC;
 }
 
-/**
- * Beside an open post: the rest of its first project, newest first; then the
- * nearest posts by date on either side. Never the post itself, at most n.
- */
-export function similar<P extends Like>(post: P, posts: P[], n: number): P[] {
-  const out: P[] = [];
-  const seen = new Set<string>([post.id]);
-  const take = (p: P) => {
-    if (out.length < n && !seen.has(p.id)) {
-      seen.add(p.id);
-      out.push(p);
-    }
-  };
-  const thing = post.things[0];
-  if (thing) for (const p of posts) if (p.things.includes(thing)) take(p);
-  // then one newer, one older, one newer… nearest first on each side
-  const t = post.when.getTime();
-  const newer = posts.filter((p) => p.when.getTime() > t).sort((a, b) => a.when.getTime() - b.when.getTime());
-  const older = posts.filter((p) => p.when.getTime() <= t && p.id !== post.id).sort((a, b) => b.when.getTime() - a.when.getTime());
-  for (let i = 0; i < Math.max(newer.length, older.length); i++) {
-    if (newer[i]) take(newer[i]);
-    if (older[i]) take(older[i]);
-  }
-  return out;
+export interface LedgerRow {
+  id: string;
+  kind: string;
+  title: string;
+  date: string;
+}
+
+/** The latest n posts as rows of kind · title · date; blank rows pad to n. */
+export function ledger(posts: Like[], n: number): LedgerRow[] {
+  const rows: LedgerRow[] = posts.slice(0, n).map((p) => ({
+    id: p.id,
+    kind: KIND_LABEL[p.kind],
+    title: p.title || excerpt(p.plain.split('\n')[0] ?? '', 60),
+    date: formatShort(p.date).split(',')[0],
+  }));
+  while (rows.length < n) rows.push({ id: '', kind: '', title: '', date: '' });
+  return rows;
+}
+
+/** Reading time at about 200 words a minute, at least one. */
+export function readMinutes(text: string): number {
+  const words = text.split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(words / 200));
+}
+
+/** "26 Oct – 30 Oct", or one day when the span is a day. */
+export function dateRange(posts: Like[]): string {
+  if (posts.length === 0) return '';
+  const day = (p: Like) => formatShort(p.date).split(',')[0];
+  const sorted = [...posts].sort((a, b) => a.when.getTime() - b.when.getTime());
+  const a = day(sorted[0]);
+  const b = day(sorted[sorted.length - 1]);
+  return a === b ? a : `${a} – ${b}`;
+}
+
+/** About n characters, cut at a word, with an ellipsis when cut. */
+export function excerpt(text: string, n: number): string {
+  const t = text.trim();
+  if (t.length <= n) return t;
+  const cut = t.slice(0, n);
+  const at = cut.lastIndexOf(' ');
+  return (at > n / 2 ? cut.slice(0, at) : cut).trimEnd() + '…';
+}
+
+export const ALL_LANES = ['photos', 'sets', 'longreads', 'notes'] as const;
+
+/** The lanes that have posts, in the fixed order. */
+export function kindsPresent(posts: Like[]): string[] {
+  const have = new Set(posts.map((p) => laneOf(p.kind)));
+  return ALL_LANES.filter((l) => have.has(l));
+}
+
+/** How many empty cells fill out the last row of count cells in n columns. */
+export function padTo(count: number, n: number): number {
+  return count % n === 0 ? 0 : n - (count % n);
 }

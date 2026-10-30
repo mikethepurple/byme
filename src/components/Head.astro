@@ -1,0 +1,81 @@
+---
+// The head of a project, post or about page, per the hand-over. Its top line
+// has the logo row's padding and line-height (18px, 22px) so the hairlines
+// meet across the column boundary. The big title sits on the floor; the
+// description and the ↗ link share one baseline.
+interface Props {
+  left: { text: string; href?: string; color?: string; quiet?: boolean }[]; // the top line's items
+  right?: { text: string; color?: string };
+  title?: string; // none: an untitled post with no text; the top line says what it is
+  size?: 'page' | 'post'; // 96px or 72px
+  description?: string;
+  link?: { label: string; url: string };
+  transitionName?: string;
+}
+
+const { left, right, title, size = 'page', description, link, transitionName } = Astro.props;
+const tint = (c?: string) => (c ? `color: color-mix(in oklab, ${c} var(--tint-mix), #000)` : undefined);
+---
+
+<div class="top">
+  <div class="items">
+    {
+      left.map((i) =>
+        i.href ? (
+          <a href={i.href} class:list={[{ quiet: i.quiet }]} style={tint(i.color)}>{i.text}</a>
+        ) : (
+          <span class:list={[{ quiet: i.quiet }]} style={tint(i.color)}>{i.text}</span>
+        ),
+      )
+    }
+  </div>
+  {right && <span class="quiet" style={tint(right.color)}>{right.text}</span>}
+</div>
+{
+  (title || description || link) && (
+<div class="body">
+  {title && <h1 class:list={['title', size]} transition:name={transitionName}>{title}</h1>}
+  {
+    (description || link) && (
+      <div class="line">
+        {description && <p class="desc">{description}</p>}
+        {link && <a href={link.url} class="ext">{link.label} ↗</a>}
+      </div>
+    )
+  }
+</div>
+  )
+}
+
+<style>
+  .top {
+    padding: 18px var(--page-pad);
+    line-height: 22px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    font-size: 13px;
+  }
+  .items { display: flex; flex-wrap: wrap; gap: 4px 24px; }
+  .items a { color: inherit; text-decoration: none; }
+  .items a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .body { padding: 18px var(--page-pad); display: flex; flex-direction: column; justify-content: flex-end; min-height: 180px; }
+  .body:empty { display: none; }
+  .title { margin: 0; font-weight: 600; line-height: 1; letter-spacing: -0.05em; }
+  .title.page { font-size: 96px; }
+  .title.post { font-size: 72px; letter-spacing: -0.045em; max-width: 700px; }
+  .line { display: flex; justify-content: space-between; align-items: baseline; gap: 24px; margin-top: 14px; }
+  .desc { margin: 0; font-size: 17px; color: var(--ink-2); line-height: 1.4; }
+  .ext { font-size: 17px; white-space: nowrap; color: var(--ink); text-decoration-color: var(--ink-3); }
+
+  @media (max-width: 1199px) {
+    .top { padding: 16px var(--page-pad) 0; border-bottom: 0; line-height: 1.4; }
+    .body { padding: 48px var(--page-pad) 16px; min-height: 0; }
+    .title.page { font-size: 64px; }
+    .title.post { font-size: 44px; line-height: 1.02; }
+    .line { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .desc { font-size: 16px; }
+    .ext { font-size: 16px; }
+  }
+</style>

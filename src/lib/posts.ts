@@ -21,9 +21,10 @@ export function kindOf(p: { images: number; body: string; link?: string }): Kind
   return 'note';
 }
 
-/** Which lane a kind is read in: sets live in the photos lane. */
-export function laneOf(kind: Kind): 'photos' | 'longreads' | 'notes' {
-  if (kind === 'photo' || kind === 'set') return 'photos';
+/** Which lane a kind is read in: one lane per kind. */
+export function laneOf(kind: Kind): 'photos' | 'sets' | 'longreads' | 'notes' {
+  if (kind === 'photo') return 'photos';
+  if (kind === 'set') return 'sets';
   if (kind === 'longread') return 'longreads';
   return 'notes';
 }

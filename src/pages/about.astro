@@ -1,0 +1,26 @@
+---
+// About, per the hand-over: the project page template with the strip in the
+// dot's colour. The text is a placeholder until Misha writes it.
+import TwoPane from '../layouts/TwoPane.astro';
+import Nav from '../components/Nav.astro';
+import Head from '../components/Head.astro';
+import { loadPosts, loadThings } from '../lib/load';
+
+export const prerender = true;
+
+const things = await loadThings();
+const posts = await loadPosts();
+---
+
+<TwoPane title="About" strip="#f0a020" filterLabel="filter">
+  <Head slot="head" left={[{ text: 'About' }]} title="Misha Erikov" description="Things I make, dropped here as they happen." />
+  <div slot="content" class="about">
+    <p>This page is a placeholder. The text is mine to write.</p>
+  </div>
+  <Nav slot="side" things={things} posts={posts} where="about" />
+</TwoPane>
+
+<style>
+  .about { padding: 28px var(--page-pad) 40px; font-size: 19px; line-height: 1.6; }
+  .about p { max-width: var(--read); margin: 0 0 18px; color: var(--ink-2); }
+</style>

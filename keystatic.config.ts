@@ -72,7 +72,6 @@ export default config({
         }),
         link: fields.url({ label: 'Link (optional)' }),
         draft: fields.checkbox({ label: 'Draft', defaultValue: false }),
-        pinned: fields.checkbox({ label: 'Show on the front page', defaultValue: false }),
         body: fields.markdoc({
           label: 'Text',
           options: {

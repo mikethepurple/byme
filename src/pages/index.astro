@@ -1,24 +1,30 @@
 ---
-// The front: one grid — the projects first, then the latest posts (pinned
-// first); the navigation on the right.
+// The front: the project cards, then every post newest first, one page at a
+// time; the menu on the right.
 import TwoPane from '../layouts/TwoPane.astro';
 import Nav from '../components/Nav.astro';
 import Grid from '../components/Grid.astro';
-import { frontCells } from '../lib/related';
-import { loadPosts, loadThings, thingNames, thingColors } from '../lib/load';
+import { projectOf } from '../lib/related';
+import { loadPosts, loadThings, thingNames, thingColors, PAGE_SIZE } from '../lib/load';
 
 export const prerender = true;
-
-const LATEST = 6; // latest posts after the pinned ones
 
 const things = await loadThings();
 const posts = await loadPosts();
 const names = thingNames(things);
 const colors = thingColors(things);
-const latest = frontCells(things, posts, LATEST).flatMap((c) => (c.kind === 'post' ? [c.post] : []));
+const byThing = new Map(things.map((t) => [t.id, posts.filter((p) => projectOf(p) === t.id)]));
 ---
 
 <TwoPane title="by.erikov.me">
-  <Grid slot="content" things={things} posts={latest} names={names} colors={colors} />
+  <Fragment slot="content">
+    <Grid things={things} byThing={byThing} posts={posts.slice(0, PAGE_SIZE)} names={names} colors={colors} />
+    {posts.length > PAGE_SIZE && <nav class="pages small"><a href="/page/2">older →</a></nav>}
+  </Fragment>
   <Nav slot="side" things={things} posts={posts} where="front" />
 </TwoPane>
+
+<style>
+  .pages { padding: 14px var(--page-pad); }
+  .pages a { text-decoration: none; }
+</style>

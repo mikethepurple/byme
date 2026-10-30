@@ -1,12 +1,12 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import { kindOf, parseDate, laneOf, plain, type Kind } from './posts';
 
-// `things` (ids) and `pinned` are lifted out of `data` so a Post satisfies the
-// `Like` shape the pure helpers in related.ts work on.
-export type Post = CollectionEntry<'posts'> & { kind: Kind; when: Date; text: string; plain: string; things: string[]; pinned: boolean };
+// `things` (ids), `date`, `title` and `plain` are lifted out so a Post satisfies
+// the `Like` shape the pure helpers in related.ts work on.
+export type Post = CollectionEntry<'posts'> & { kind: Kind; when: Date; date: string; title: string; text: string; plain: string; things: string[] };
 export type Thing = CollectionEntry<'things'>;
 
-export const LANES = ['photos', 'longreads', 'notes'] as const;
+export const LANES = ['photos', 'sets', 'longreads', 'notes'] as const;
 export type Lane = (typeof LANES)[number];
 
 export const PAGE_SIZE = 30;
@@ -24,7 +24,8 @@ export async function loadPosts(): Promise<Post[]> {
         text,
         plain: plain(text),
         things: p.data.things.map((t) => t.id),
-        pinned: p.data.pinned,
+        date: p.data.date,
+        title: p.data.title ?? '',
       });
     })
     .sort((a, b) => b.when.getTime() - a.when.getTime());

@@ -1,48 +1,75 @@
 ---
-// One cell of a grid: a project, or a post of any kind. Every cell has the
-// same shape: a label row on top saying what it is (Project, Photo, Set, Note,
-// Longread) with the number or date on the right, then a box inside the same
-// margins. A post fills its box from the top left: text cut at the bottom, a
-// picture cropped to it, a set as a strip you swipe. A project is composed
-// the other way up: its block — the big name, the line, the try link — sits on
-// the floor of the box; the one thing in the grid that is not a fragment.
-// The label's words are links of their own (Photo → the photos, Ada → the
-// project); the rest of the cell opens the post.
+// One cell of the grid, per the hand-over: a project card or a post. Every
+// cell is the same height.
+//
+// A project card: "Project" and the index in the project's colour; a ledger —
+// an ink rule, always four rows (kind | title | date), blank rows as hairlines,
+// a footer "{n} posts · all →" in the colour; then the name, a description
+// with room for two lines, and a link row that is always 30px tall, so the
+// names line up across the row. The name is the inward link, stretched over
+// the card; the ↗ link is separate and sits above it. No nested anchors.
+//
+// A post: "Kind · Project" (misc in gray), the date on the right; a picture,
+// or the title and an excerpt — never the whole article.
 import { Image } from 'astro:assets';
 import { formatShort, laneOf } from '../lib/posts';
+import { KIND_LABEL, MISC, excerpt, ledger, projectOf } from '../lib/related';
 import type { Post, Thing } from '../lib/load';
 
 interface Props {
   thing?: Thing;
   index?: number; // the project's number, 1-based
+  theirs?: Post[]; // the project's posts, newest first
   post?: Post;
   names?: Map<string, string>;
   colors?: Map<string, string>; // thing id → its colour
+  showProject?: boolean; // off on a project page
 }
 
-const { thing, index = 0, post, names = new Map(), colors = new Map() } = Astro.props;
+const { thing, index = 0, theirs = [], post, names = new Map(), colors = new Map(), showProject = true } = Astro.props;
+
+const color = thing ? thing.data.color || 'var(--quiet)' : '';
+const rows = thing ? ledger(theirs, 4) : [];
+const count = theirs.length;
+
 const imgs = post?.data.images ?? [];
-const link = post?.data.link || '';
-const hostOf = (u: string) => u.replace(/^https?:\/\//, '').replace(/\/$/, '');
-const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } as const;
+const proj = post ? projectOf(post) : '';
+const projName = proj === MISC ? 'misc' : (names.get(proj) ?? proj);
+const projColor = proj === MISC ? 'var(--misc)' : colors.get(proj) || '';
+const postText = post ? excerpt(post.plain, 300) : '';
+const aria = post ? post.title || excerpt(post.plain.split('\n')[0] ?? '', 80) || `${KIND_LABEL[post.kind]}, ${formatShort(post.data.date)}` : '';
 ---
 
 {
   thing && (
-    <article class:list={['cell', 'thing', { tint: !!thing.data.color }]} style={thing.data.color ? `--c: ${thing.data.color}` : undefined}>
-      <div class="top small">
-        <span class="what">Project</span>
-        <span class:list={['when', { tint: !!thing.data.color }]}>{String(index).padStart(2, '0')}</span>
+    <article class="cell project" style={`--c: ${color}`}>
+      <div class="label-row">
+        <span>Project</span>
+        <span class="c">{String(index).padStart(2, '0')}</span>
       </div>
-      <div class="box floor">
-        <a href={`/${thing.id}`} class="name" transition:name={`thing-${thing.id}`}>{thing.data.name}</a>
-        {thing.data.line && <p class="line">{thing.data.line}</p>}
-        {thing.data.try.length > 0 && (
-          <p class="try">
-            {thing.data.try.map((l) => (
-              <a href={l.url}>{l.label}</a>
-            ))}
-          </p>
+      <div class="ledger">
+        {rows.map((r) => (
+          <div class="lrow">
+            <span class="quiet">{r.kind}</span>
+            <span class="t">{r.title}</span>
+            <span class="quiet">{r.date}</span>
+          </div>
+        ))}
+        <div class="lfoot c">
+          <span>{count ? `${count} post${count > 1 ? 's' : ''}` : 'No posts yet'}</span>
+          {count > 0 && <span>all →</span>}
+        </div>
+      </div>
+      <div class="grow"></div>
+      <a href={`/${thing.id}`} class="name" transition:name={`thing-${thing.id}`} aria-label={`${thing.data.name}: all posts`}>
+        {thing.data.name}
+      </a>
+      <p class="desc">{thing.data.line}</p>
+      <div class="linkrow">
+        {thing.data.try[0] && (
+          <a href={thing.data.try[0].url} class="ext">
+            {thing.data.try[0].label} ↗
+          </a>
         )}
       </div>
     </article>
@@ -52,48 +79,33 @@ const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } 
 {
   post && (
     <article class={`cell post kind-${post.kind}`} transition:name={`post-${post.id}`}>
-      <div class="top small">
+      <div class="label-row">
         <span class="what">
-          <a href={`/${laneOf(post.kind)}`}>{KIND[post.kind]}</a>
-          {post.things.map((id) => (
+          <a href={`/${laneOf(post.kind)}`}>{KIND_LABEL[post.kind]}</a>
+          {showProject && (
             <>
-              <span class="sep"> · </span>
-              <a href={`/${id}`} class:list={['who', { tint: colors.has(id) }]} style={colors.has(id) ? `--c: ${colors.get(id)}` : undefined}>
-                {names.get(id) ?? id}
+              {' · '}
+              <a href={`/${proj}`} class="who" style={projColor ? `color: color-mix(in oklab, ${projColor} var(--tint-mix), #000)` : undefined}>
+                {projName}
               </a>
             </>
-          ))}
+          )}
         </span>
-        <span class="when">{formatShort(post.data.date)}</span>
+        <span class="quiet">{formatShort(post.data.date)}</span>
       </div>
-      <a href={`/${post.id}`} class="box" aria-label={post.data.title || KIND[post.kind]}>
-        <div class="inner">
-          {imgs.length === 1 && (
-            <div class="photo">
-              <Image src={imgs[0]} alt={post.data.title || ''} widths={[480, 960]} sizes="(max-width: 900px) 100vw, 33vw" loading="lazy" />
-            </div>
-          )}
-          {imgs.length > 1 && (
-            <div class="photo strip" data-strip>
-              <div class="slides">
-                {imgs.slice(0, 6).map((img) => (
-                  <div class="slide">
-                    <Image src={img} alt="" widths={[480, 960]} sizes="(max-width: 900px) 100vw, 33vw" loading="lazy" />
-                  </div>
-                ))}
-              </div>
-              <div class="dots">{imgs.slice(0, 6).map((_, i) => <i class:list={[{ on: i === 0 }]} />)}</div>
-            </div>
-          )}
-          {imgs.length === 0 && (
-            <div class="text">
-              {post.data.title && <span class="title">{post.data.title}</span>}
-              {link && !post.text && <span class="href">{hostOf(link)}</span>}
-              {post.text && <span class="body">{post.plain}</span>}
-            </div>
-          )}
+      {imgs.length > 0 && (
+        <div class="pic">
+          <Image src={imgs[0]} alt={post.title || (post.kind === 'set' ? `${imgs.length} pictures` : 'Picture')} widths={[480, 960]} sizes="(max-width: 699px) 100vw, (max-width: 1199px) 50vw, 30vw" loading="lazy" />
         </div>
-      </a>
+      )}
+      {imgs.length === 0 && (
+        <>
+          {post.title && <div class="title">{post.title}</div>}
+          {postText && <div class="text">{postText}</div>}
+          {!post.title && !postText && post.data.link && <div class="title">{post.data.link.replace(/^https?:\/\//, '')}</div>}
+        </>
+      )}
+      <a href={`/${post.id}`} class="open" aria-label={aria}></a>
     </article>
   )
 }
@@ -101,118 +113,58 @@ const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } 
 <style>
   .cell {
     position: relative;
-    display: flex;
-    flex-direction: column;
-    aspect-ratio: 1 / 1;
-    min-height: 0;
-    background: var(--bg);
+    height: var(--cell);
+    box-sizing: border-box;
+    min-width: 0;
+    overflow: hidden;
+    padding: 18px var(--page-pad);
     border-right: 1px solid var(--line);
     border-bottom: 1px solid var(--line);
+    background: var(--bg);
     color: var(--ink);
-    container-type: inline-size;
-  }
-
-  /* the label row: what it is (each word its own link), and the number or date */
-  .top {
-    flex: none;
     display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 1rem;
-    padding: 12px var(--page-pad) 0;
+    flex-direction: column;
   }
-  .what { color: var(--ink); font-weight: 500; }
-  .what a { position: relative; z-index: 1; color: inherit; text-decoration: none; }
-  .what a.tint { color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
-  .what a.tint:hover { text-decoration-color: currentColor; }
-  .what a:hover { text-decoration: underline; text-decoration-color: var(--accent-ink); text-underline-offset: 3px; }
-  .sep { color: var(--ink-3); font-weight: 400; }
-  .when { color: var(--ink-3); }
-  .when.tint { font-weight: 500; color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
-  .when.tint { font-weight: 500; color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
+  .label-row a { color: inherit; text-decoration: none; position: relative; z-index: 1; }
+  .label-row a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .c { color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
 
-  /* the box: everything sits inside the same margins; the link stretches over
-     the whole cell, under the label's own links */
-  .box {
-    display: block;
-    flex: 1 1 auto;
-    min-height: 0;
-    margin: 12px var(--page-pad) var(--page-pad);
-    color: inherit;
-    text-decoration: none;
+  /* the project card */
+  .ledger { display: flex; flex-direction: column; margin-top: 14px; border-top: 1px solid var(--ink); }
+  .lrow {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 7px 0;
+    height: 30px;
+    box-sizing: border-box;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+    line-height: 16px;
   }
-  .box::after { content: ''; position: absolute; inset: 0; }
-  .inner { position: relative; height: 100%; overflow: hidden; }
-
-  /* a project: name, line, try link as one block on the floor of the box;
-     the name is the link, stretched over the cell */
-  .box.floor { display: flex; flex-direction: column; justify-content: flex-end; overflow: visible; }
+  .lrow .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lfoot { display: flex; justify-content: space-between; padding: 7px 0; font-size: 13px; line-height: 16px; }
+  .grow { flex: 1 1 auto; }
   .name {
-    display: block;
-    font-size: clamp(2.25rem, 16cqw, 4.5rem);
-    font-weight: 500;
-    letter-spacing: -0.03em;
-    line-height: 0.95;
+    font-size: 56px;
+    font-weight: 600;
+    letter-spacing: -0.045em;
+    line-height: 1;
     color: var(--ink);
     text-decoration: none;
   }
   .name::after { content: ''; position: absolute; inset: 0; }
-  .cell.thing:hover .name { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; text-decoration-color: var(--accent-ink); }
-  .cell.thing.tint:hover .name { text-decoration-color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
-  .line { margin: 0.9rem 0 0; max-width: 30ch; color: var(--ink-2); }
-  .try { margin: 0.6rem 0 0; display: flex; gap: 1rem; }
-  .try a { position: relative; z-index: 1; }
+  .project:hover .name { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; text-decoration-color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
+  .desc { margin: 14px 0 0; font-size: 15px; line-height: 1.4; color: var(--ink-2); max-width: 270px; min-height: 42px; }
+  .linkrow { height: 30px; display: flex; align-items: flex-end; }
+  .ext { position: relative; z-index: 1; font-size: 15px; color: var(--ink); text-decoration-color: var(--ink-3); }
 
-  /* a picture fills the box, cropped; a set is a strip of them, above the
-     stretched link so a swipe scrolls it and a tap still opens the post */
-  .photo { position: absolute; inset: 0; }
-  .photo :global(img) { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .strip { z-index: 1; }
-  .slides {
-    display: flex;
-    height: 100%;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-  }
-  .slides::-webkit-scrollbar { display: none; }
-  .slide { flex: 0 0 100%; height: 100%; scroll-snap-align: start; }
-  .dots { position: absolute; left: 0; right: 0; bottom: 8px; display: flex; justify-content: center; gap: 5px; pointer-events: none; }
-  .dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255, 255, 255, 0.5); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3); }
-  .dots i.on { background: #fff; }
-
-  /* text, cut at the box's bottom, fading out */
-  .text {
-    height: 100%;
-    mask-image: linear-gradient(#000 70%, transparent 100%);
-    -webkit-mask-image: linear-gradient(#000 70%, transparent 100%);
-  }
-  .title { display: block; font-size: 1.25rem; font-weight: 500; letter-spacing: -0.01em; line-height: 1.25; margin-bottom: 0.5rem; }
-  .body { display: block; white-space: pre-line; color: var(--ink-2); }
-  .kind-longread .body { font-size: 0.9375rem; }
-  .href { display: block; text-decoration: underline; text-decoration-color: var(--ink-3); text-underline-offset: 3px; }
+  /* a post */
+  .post { gap: 12px; }
+  .pic { flex: 1 1 auto; min-height: 0; }
+  .pic :global(img) { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .title { font-size: 20px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.2; }
+  .text { font-size: 15px; color: var(--ink-2); line-height: 1.45; }
+  .open { position: absolute; inset: 0; }
+  .post:hover .title { text-decoration: underline; text-underline-offset: 4px; }
 </style>
-
-<script>
-  // A set's strip: the dot follows the picture in view. Runs once per page and
-  // again after every in-place navigation.
-  function wire() {
-    document.querySelectorAll<HTMLElement>('[data-strip]').forEach((strip) => {
-      const slides = strip.querySelector<HTMLElement>('.slides');
-      if (!slides || slides.dataset.wired) return;
-      slides.dataset.wired = '1';
-      const dots = strip.querySelectorAll('.dots i');
-      slides.addEventListener(
-        'scroll',
-        () => {
-          const i = Math.round(slides.scrollLeft / slides.clientWidth);
-          dots.forEach((d, k) => d.classList.toggle('on', k === i));
-        },
-        { passive: true },
-      );
-    });
-  }
-  wire();
-  document.addEventListener('astro:page-load', wire);
-</script>

@@ -1,14 +1,14 @@
 ---
-// Every address but the front. Browsing (everything, a project, a kind, a
-// month, a page): a grid of posts on the left, a project's head above its
-// posts. Reading: the post on the left, similar posts under the navigation.
+// Every address but the front and about. Browsing (everything, a project,
+// misc, a kind, a month, a page): a head when a project or misc is in force,
+// then the grid. Reading: the post's head, then the post.
 import TwoPane from '../layouts/TwoPane.astro';
 import Nav from '../components/Nav.astro';
 import Grid from '../components/Grid.astro';
-import ProjectHead from '../components/ProjectHead.astro';
+import Head from '../components/Head.astro';
 import PostView from '../components/Post.astro';
-import { similar } from '../lib/related';
-import { formatDate } from '../lib/posts';
+import { KIND_LABEL, MISC, dateRange, excerpt, projectOf, readMinutes } from '../lib/related';
+import { formatDate, formatShort, laneOf } from '../lib/posts';
 import {
   loadPosts,
   loadThings,
@@ -22,7 +22,6 @@ import {
   LANES,
   PAGE_SIZE,
   type Post,
-  type Thing,
   type Scope,
 } from '../lib/load';
 
@@ -30,23 +29,19 @@ export const prerender = true;
 
 type Props = ({ type: 'browse'; page?: number } & Scope) | { type: 'read'; post: Post; prev?: Post; next?: Post };
 
-const SCOPED_MAX = 100;
-const SIMILAR = 6;
-
 export async function getStaticPaths() {
   const things = await loadThings();
   const posts = await loadPosts();
   const paths: { params: { slug: string }; props: Props }[] = [];
-  const reserved = new Set<string>([...LANES, 'everything', 'page', 'rss.xml', 'micropub', 'auth', 'keystatic']);
+  const reserved = new Set<string>([...LANES, 'everything', 'page', 'about', MISC, 'rss.xml', 'micropub', 'auth', 'keystatic']);
 
   paths.push({ params: { slug: 'everything' }, props: { type: 'browse' } });
-  for (const lane of LANES) paths.push({ params: { slug: lane }, props: { type: 'browse', lane } });
   // Every combination of project × when × kind has an address:
   // /<project>/<month>/<kind>, each part optional. A month (2026-10) or a whole
-  // year (2026) narrows the same way, by prefix.
+  // year (2026) narrows the same way, by prefix. misc is the project of none.
   const whens = [...yearsOf(posts), ...monthsOf(posts)];
   for (const t of things) if (reserved.has(t.id) || /^\d{4}-\d\d/.test(t.id)) throw new Error(`Thing slug "${t.id}" is reserved`);
-  for (const thing of [undefined, ...things.map((t) => t.id)]) {
+  for (const thing of [undefined, ...things.map((t) => t.id), MISC]) {
     for (const month of [undefined, ...whens]) {
       for (const lane of [undefined, ...LANES]) {
         const slug = [thing, month, lane].filter(Boolean).join('/');
@@ -71,77 +66,145 @@ const posts = await loadPosts();
 const names = thingNames(things);
 const colors = thingColors(things);
 
+const ofProject = (id: string) => posts.filter((p) => projectOf(p) === id);
+const nameOf = (id: string) => (id === MISC ? 'Misc' : (names.get(id) ?? id));
+const colorOf = (id: string) => (id === MISC ? 'var(--misc)' : colors.get(id) || '');
+const kindsLine = (ps: Post[]) => {
+  const n: Record<string, number> = {};
+  for (const p of ps) n[p.kind] = (n[p.kind] ?? 0) + 1;
+  return (['photo', 'set', 'note', 'longread'] as const)
+    .filter((k) => n[k])
+    .map((k) => `${n[k]} ${KIND_LABEL[k].toLowerCase()}${n[k] > 1 ? 's' : ''}`)
+    .join(' · ');
+};
+
 let title = '';
 let description: string | undefined;
 let image: string | undefined;
 let scope: Scope = {};
-let items: Post[] = [];
+let scoped: Post[] = posts;
+let feed: Post[] = [];
 let older: string | undefined;
 let newer: string | undefined;
-let head: { thing: Thing; index: number } | undefined;
-let similarItems: Post[] = [];
+let strip: string | undefined;
+let filterLabel = 'filter';
 
 if (props.type === 'browse') {
   scope = { thing: props.thing, lane: props.lane, month: props.month };
-  title = scopeLabel(scope, names);
-  const scoped = scopePosts(posts, scope);
-  let feed: Post[];
+  title = scopeLabel(scope, names).replace(MISC, 'Misc');
+  scoped = props.thing === MISC ? scopePosts(ofProject(MISC), { lane: props.lane, month: props.month }) : scopePosts(posts, scope);
   if (props.page) {
     const n = props.page;
     feed = scoped.slice((n - 1) * PAGE_SIZE, n * PAGE_SIZE);
     title = `page ${n}`;
-    newer = n === 2 ? '/everything' : `/page/${n - 1}`;
+    newer = n === 2 ? '/' : `/page/${n - 1}`;
     older = n * PAGE_SIZE < scoped.length ? `/page/${n + 1}` : undefined;
-  } else if (!props.thing && !props.lane && !props.month) {
-    feed = scoped.slice(0, PAGE_SIZE);
-    older = scoped.length > PAGE_SIZE ? '/page/2' : undefined;
   } else {
-    feed = scoped.slice(0, SCOPED_MAX);
+    feed = scoped.slice(0, PAGE_SIZE);
+    older = scoped.length > PAGE_SIZE ? `/page/2` : undefined;
   }
-  items = feed;
   if (props.thing) {
-    const t = things.find((x) => x.id === props.thing)!;
-    head = { thing: t, index: things.indexOf(t) + 1 };
-    description = t.data.line || undefined;
-    image = t.data.cover?.src;
+    strip = colorOf(props.thing);
+    filterLabel = `filter: ${nameOf(props.thing)}`;
+    const t = things.find((x) => x.id === props.thing);
+    description = props.thing === MISC ? "Posts that don't belong to a project." : t?.data.line || undefined;
+    image = t?.data.cover?.src;
+  } else if (props.lane || props.month) {
+    filterLabel = `filter: ${title}`;
   }
 } else {
   const p = props.post;
-  title = p.data.title || firstLine(p.plain) || `${p.kind} · ${formatDate(p.data.date)}`;
-  description = p.text ? firstLine(p.plain, 160) : undefined;
+  title = p.title || firstLine(p.plain) || `${KIND_LABEL[p.kind]} · ${formatDate(p.data.date)}`;
+  description = p.text ? excerpt(p.plain, 160) : undefined;
   image = p.data.images[0]?.src;
-  similarItems = similar(p, posts, SIMILAR);
+  const proj = projectOf(p);
+  scope = { thing: proj };
+  strip = colorOf(proj);
+  filterLabel = `filter: ${nameOf(proj)}`;
 }
+
+// The head of a project page: the project's facts; of a post: its facts.
+const headThing = props.type === 'browse' && props.thing ? props.thing : undefined;
+const theirs = headThing ? ofProject(headThing) : [];
+const thingIndex = headThing && headThing !== MISC ? things.findIndex((t) => t.id === headThing) + 1 : 0;
+const thingTry = headThing && headThing !== MISC ? things.find((t) => t.id === headThing)?.data.try[0] : undefined;
+
+const post = props.type === 'read' ? props.post : undefined;
+const postProj = post ? projectOf(post) : '';
+const postMore = post ? ofProject(postProj).filter((x) => x.id !== post.id) : [];
+const postUntitled = post ? !post.title : false;
+// An untitled post whose whole text is one short line: that line is its title, and nothing repeats below.
+const postLead = post && postUntitled && !post.plain.includes('\n') && post.plain.length <= 140 ? post.plain : '';
+const offset = post?.data.date.match(/(Z|[+-]\d\d:?\d\d)$/)?.[1];
 ---
 
-<TwoPane title={title} description={description} image={image} type={props.type === 'read' ? 'article' : 'website'}>
+<TwoPane title={title} description={description} image={image} type={props.type === 'read' ? 'article' : 'website'} strip={strip} filterLabel={filterLabel}>
+  {
+    headThing && (
+      <Head
+        slot="head"
+        left={[
+          { text: headThing === MISC ? 'Misc' : 'Project' },
+          { text: theirs.length ? `${theirs.length} post${theirs.length > 1 ? 's' : ''}` : 'No posts yet', quiet: true },
+          ...(theirs.length ? [{ text: kindsLine(theirs), quiet: true }, { text: dateRange(theirs), quiet: true }] : []),
+        ]}
+        right={thingIndex ? { text: String(thingIndex).padStart(2, '0'), color: colorOf(headThing) } : undefined}
+        title={nameOf(headThing)}
+        description={description}
+        link={thingTry ? { label: thingTry.label, url: thingTry.url } : undefined}
+        transitionName={headThing === MISC ? undefined : `thing-${headThing}`}
+      />
+    )
+  }
+  {
+    post && (
+      <Head
+        slot="head"
+        left={[
+          { text: KIND_LABEL[post.kind] },
+          { text: nameOf(postProj), href: `/${postProj}`, color: colorOf(postProj) },
+          ...(post.kind === 'longread' ? [{ text: `${readMinutes(post.plain)} min read`, quiet: true }] : []),
+        ]}
+        right={{ text: `${formatDate(post.data.date)}${offset ? ` UTC${offset === 'Z' ? '' : offset}` : ''}` }}
+        title={postLead || post.title || (post.plain ? firstLine(post.plain) : undefined)}
+        size="post"
+        transitionName={`post-${post.id}`}
+      />
+    )
+  }
   <Fragment slot="content">
-    {head && <ProjectHead thing={head.thing} index={head.index} />}
-    {props.type === 'browse' && <Grid posts={items} names={names} colors={colors} />}
     {
-      (older || newer) && (
-        <nav class="pages small">
-          {newer && <a href={newer}>← newer</a>}
-          {older && <a href={older}>older →</a>}
-        </nav>
+      props.type === 'browse' && (
+        <>
+          <Grid posts={feed} names={names} colors={colors} showProject={!headThing} />
+          {(older || newer) && (
+            <nav class="pages small">
+              {newer && <a href={newer}>← newer</a>}
+              {older && <a href={older}>older →</a>}
+            </nav>
+          )}
+        </>
       )
     }
-    {props.type === 'read' && <PostView post={props.post} names={names} colors={colors} newer={props.prev} older={props.next} />}
     {
-      props.type === 'read' && similarItems.length > 0 && (
-        <section class="similar">
-          <h2 class="label small">Similar posts</h2>
-          <Grid posts={similarItems} names={names} colors={colors} />
-        </section>
+      post && (
+        <PostView
+          post={postLead ? { ...post, text: '' } as Post : post}
+          more={postMore}
+          moreHref={`/${postProj}`}
+          moreCount={postMore.length}
+          projName={nameOf(postProj)}
+          projColor={colorOf(postProj)}
+          newer={props.type === 'read' ? props.prev : undefined}
+          older={props.type === 'read' ? props.next : undefined}
+        />
       )
     }
   </Fragment>
-  <Nav slot="side" things={things} posts={posts} scope={scope} where={props.type === 'read' ? 'post' : 'browse'} />
+  <Nav slot="side" things={things} posts={posts} scoped={headThing ? theirs : props.type === 'read' ? posts : scoped} scope={scope} where={props.type === 'read' ? 'post' : 'browse'} />
 </TwoPane>
 
 <style>
-  .similar .label { font-weight: 400; color: var(--ink-3); margin: 0; padding: 22px var(--page-pad) 6px; }
-  .pages { display: flex; justify-content: space-between; padding: 1rem var(--page-pad) 2rem; }
-  .pages a { color: var(--ink-2); text-decoration: none; }
-  .pages a:hover { color: var(--ink); }
+  .pages { display: flex; justify-content: space-between; padding: 14px var(--page-pad); }
+  .pages a { text-decoration: none; }
 </style>

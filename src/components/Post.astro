@@ -1,125 +1,141 @@
 ---
-// An open post, at reading width: the same label row as its cell (kind ·
-// project, the date on the right), the title if there is one, the pictures,
-// the text. A note without a title shows its text large: the note is its own
-// headline. Newer / older at the end. The post keeps a minimum height so what
-// follows sits well below it, even when the post is three lines.
+// An open post, per the hand-over. A longread: the text in columns 1–2 (a
+// paragraph never wider than --read; pictures across both), column 3 a
+// "More in {project}" ledger and older / newer. A photo or a set: the
+// pictures across all three columns, the caption and older / newer below.
 import { Image } from 'astro:assets';
 import { render } from 'astro:content';
-import { formatDate, laneOf } from '../lib/posts';
+import { KIND_LABEL, MISC, ledger, projectOf } from '../lib/related';
 import type { Post } from '../lib/load';
 
 interface Props {
   post: Post;
-  names: Map<string, string>;
-  colors?: Map<string, string>;
+  more: Post[]; // the rest of its project, newest first
+  moreHref: string;
+  moreCount: number;
+  projName: string;
+  projColor?: string;
   newer?: Post;
   older?: Post;
 }
 
-const { post, names, colors = new Map(), newer, older } = Astro.props;
+const { post, more, moreHref, moreCount, projName, projColor, newer, older } = Astro.props;
 const { Content } = await render(post);
-const offset = post.data.date.match(/(Z|[+-]\d\d:?\d\d)$/)?.[1];
+const visual = post.data.images.length > 0;
+const rows = ledger(more, 3);
+const proj = projectOf(post);
 const link = post.data.link || '';
-const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } as const;
-const lead = !post.data.title && post.kind === 'note';
 ---
 
-<article class={`post kind-${post.kind}`} transition:name={`post-${post.id}`}>
-  <p class="top small">
-    <span class="what">
-      <a href={`/${laneOf(post.kind)}`}>{KIND[post.kind]}</a>
-      {
-        post.things.map((id) => (
-          <>
-            <span class="sep"> · </span>
-            <a href={`/${id}`} class:list={[{ tint: colors.has(id) }]} style={colors.has(id) ? `--c: ${colors.get(id)}` : undefined}>
-              {names.get(id) ?? id}
-            </a>
-          </>
-        ))
-      }
-    </span>
-    <span class="when">
-      <time datetime={post.when.toISOString()}>{formatDate(post.data.date)}</time>
-      {offset && <span class="zone"> UTC{offset === 'Z' ? '' : offset}</span>}
-    </span>
-  </p>
-  {post.data.title && <h1 class="title">{post.data.title}</h1>}
-  {
-    post.data.images.map((img) => (
-      <a href={img.src} class="pic" title={`${img.width} × ${img.height}`}>
-        <Image src={img} alt={post.data.title || ''} widths={[680, 1360, 2040]} sizes="(max-width: 900px) 100vw, 44vw" />
-      </a>
-    ))
-  }
-  {link && <p class:list={['link', { lead }]}><a href={link}>{link.replace(/^https?:\/\//, '').replace(/\/$/, '')}</a></p>}
-  {
-    post.text && (
-      <div class:list={['body', { lead }]}>
-        <Content />
+{
+  visual ? (
+    <div class="visual">
+      <div class="pics">
+        {post.data.images.map((img, i) => (
+          <a href={img.src} class="pic" title={`${img.width} × ${img.height}`}>
+            <Image src={img} alt={post.title || `${KIND_LABEL[post.kind]} ${i + 1}`} widths={[800, 1600, 2400]} sizes="(max-width: 1199px) 100vw, calc(100vw - 400px)" />
+          </a>
+        ))}
       </div>
-    )
-  }
-  {
-    (newer || older) && (
-      <p class="around small">
-        {newer && <a href={`/${newer.id}`} class="newer">← newer</a>}
-        {older && <a href={`/${older.id}`} class="older">older →</a>}
-      </p>
-    )
-  }
-</article>
+      <div class="under">
+        <div class="caption">
+          {link && <p class="link"><a href={link}>{link.replace(/^https?:\/\//, '').replace(/\/$/, '')}</a></p>}
+          {post.text && <Content />}
+        </div>
+        <nav class="around small">
+          {older ? <a href={`/${older.id}`}>← older</a> : <span class="quiet">← older</span>}
+          {newer ? <a href={`/${newer.id}`}>newer →</a> : <span class="quiet">newer →</span>}
+        </nav>
+      </div>
+    </div>
+  ) : (
+    <div class="read">
+      <div class="text">
+        {link && <p class="link"><a href={link}>{link.replace(/^https?:\/\//, '').replace(/\/$/, '')}</a></p>}
+        {post.text && <Content />}
+      </div>
+      <aside class="side">
+        <div class="small">More in <a href={moreHref} style={projColor ? `color: color-mix(in oklab, ${projColor} var(--tint-mix), #000)` : undefined}>{projName}</a></div>
+        <div class="ledger">
+          {rows.map((r) => (
+            <div class="lrow">
+              <span class="quiet">{r.kind}</span>
+              {r.id ? <a href={`/${r.id}`} class="t">{r.title}</a> : <span class="t" />}
+              <span class="quiet">{r.date}</span>
+            </div>
+          ))}
+          <div class="lfoot small" style={projColor ? `color: color-mix(in oklab, ${projColor} var(--tint-mix), #000)` : undefined}>
+            <span>{moreCount ? `${moreCount} post${moreCount > 1 ? 's' : ''}` : 'No other posts'}</span>
+            {moreCount > 0 && <a href={moreHref} style="color: inherit">all →</a>}
+          </div>
+        </div>
+        <nav class="around small">
+          {older ? <a href={`/${older.id}`}>← older</a> : <span class="quiet">← older</span>}
+          {newer ? <a href={`/${newer.id}`}>newer →</a> : <span class="quiet">newer →</span>}
+        </nav>
+      </aside>
+    </div>
+  )
+}
 
 <style>
-  .post {
-    display: flex;
-    flex-direction: column;
-    min-height: 64vh;
-    padding: 28px var(--page-pad) 48px; /* the cells' padding, so the post lines up with what follows */
-    max-width: calc(var(--read) + 2 * var(--page-pad));
+  /* a longread: two columns of text, one of ledger */
+  .read { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .text {
+    grid-column: span 2;
+    border-right: 1px solid var(--line);
+    padding: 28px var(--page-pad) 40px;
+    font-size: 19px;
+    line-height: 1.6;
   }
+  .text :global(p) { margin: 0 0 18px; max-width: var(--read); text-wrap: pretty; }
+  .text :global(h2), .text :global(h3) { max-width: var(--read); margin: 36px 0 12px; font-size: 24px; }
+  .text :global(h3) { font-size: 20px; }
+  .text :global(ul), .text :global(ol) { max-width: var(--read); margin: 0 0 18px; }
+  .text :global(blockquote) { max-width: var(--read); }
+  .text :global(img) { width: 100%; max-width: none; margin: 8px 0 26px; }
+  .text :global(p:last-child) { margin-bottom: 0; }
+  .link { font-size: 19px; }
 
-  /* the label row, as on the cell this post came from */
-  .top { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin: 0 0 1.75rem; }
-  .what { color: var(--ink); font-weight: 500; }
-  .what a { color: inherit; text-decoration: none; }
-  .what a:hover { text-decoration: underline; text-decoration-color: var(--accent-ink); text-underline-offset: 3px; }
-  .what a.tint { color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
-  .what a.tint:hover { text-decoration-color: currentColor; }
-  .sep, .zone { color: var(--ink-3); font-weight: 400; }
-  .when { color: var(--ink-3); white-space: nowrap; }
-
-  .title {
-    font-size: clamp(1.75rem, 4cqw, 2.25rem);
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    line-height: 1.15;
-    margin: 0 0 1.5rem;
+  .side { border-right: 1px solid var(--line); padding: 18px var(--page-pad); display: flex; flex-direction: column; }
+  .side .small a { text-decoration: none; }
+  .ledger { display: flex; flex-direction: column; margin-top: 14px; border-top: 1px solid var(--ink); }
+  .lrow {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+    line-height: 16px;
   }
+  .lrow .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink); text-decoration: none; }
+  .lrow a.t:hover { text-decoration: underline; }
+  .lfoot { display: flex; justify-content: space-between; padding: 7px 0; }
+  .lfoot a { text-decoration: none; }
+  .side .around { margin-top: 28px; border-top: 1px solid var(--line); padding-top: 7px; }
 
-  .pic { display: block; margin: 0 0 1.5rem; }
-  .pic :global(img) { width: 100%; height: auto; }
+  .around { display: flex; justify-content: space-between; }
+  .around a { color: var(--ink); text-decoration: none; }
+  .around a:hover { text-decoration: underline; }
 
-  .link { margin: 0 0 1.5rem; font-size: 1.0625rem; }
+  /* a photo or a set: the pictures across the width */
+  .pics { border-bottom: 1px solid var(--line); }
+  .pic { display: block; }
+  .pic :global(img) { width: 100%; height: auto; max-height: 88vh; object-fit: contain; display: block; }
+  .pic + .pic { border-top: 1px solid var(--line); }
+  .under { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .caption { grid-column: span 2; padding: 14px var(--page-pad); font-size: 15px; color: var(--ink-2); border-right: 1px solid var(--line); }
+  .caption :global(p) { margin: 0 0 0.6em; max-width: var(--read); }
+  .caption :global(p:last-child) { margin: 0; }
+  .under .around { padding: 14px var(--page-pad); border-right: 1px solid var(--line); align-items: flex-start; }
 
-  .body { font-size: 1.0625rem; line-height: 1.65; }
-  .body :global(p) { margin: 0 0 1.25em; }
-  .body :global(h1), .body :global(h2) { font-size: 1.25rem; margin: 2rem 0 0.75rem; }
-  .body :global(h3) { font-size: 1.0625rem; margin: 1.5rem 0 0.5rem; }
-  .body :global(img) { margin: 1.5rem 0; }
-  .body :global(p:last-child) { margin-bottom: 0; }
-
-  /* a note with no title: its text is the headline */
-  .lead, .body.lead { font-size: clamp(1.375rem, 2.4cqw, 1.75rem); line-height: 1.35; letter-spacing: -0.01em; }
-  .body.lead :global(p) { margin: 0 0 1em; }
-
-  .around { display: flex; justify-content: space-between; margin: auto 0 0; padding-top: 3rem; }
-  .around a { color: var(--ink-2); text-decoration: none; }
-  .around a:hover { color: var(--ink); }
-  .around .older { margin-left: auto; }
-
-  @media (max-width: 900px) {
-    .post { min-height: 0; }
+  @media (max-width: 1199px) {
+    .read, .under { grid-template-columns: minmax(0, 1fr); }
+    .text, .side, .caption, .under .around { grid-column: auto; border-right: 0; }
+    .text { padding: 20px var(--page-pad); font-size: 18px; }
+    .text :global(img) { margin-left: calc(-1 * var(--page-pad)); margin-right: calc(-1 * var(--page-pad)); width: calc(100% + 2 * var(--page-pad)); }
+    .side { border-top: 1px solid var(--line); }
+    .caption { border-bottom: 1px solid var(--line); }
   }
 </style>

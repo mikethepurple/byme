@@ -6,7 +6,7 @@
   --ink-2:   #9a9a9a;
   --ink-3:   #5c5c5c;
   --line:    #262626;
-  --accent:  #ffb424;      /* the dot, underlines */
+  --accent:  #f0a020;      /* the dot */
   --accent-ink: #ffb424;   /* amber as text: marked items */
 
   --tint-mix: 100%;        /* a project's colour as given; paper darkens it */
@@ -14,8 +14,11 @@
   --font-body: "Inter Tight", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: "SF Mono", "Fira Code", monospace;
 
-  --page-pad: 24px;  /* inside a cell, a nav row, a project head, a post: one edge everywhere */
-  --read: 680px;     /* a post, read in full */
+  --quiet:   #8a8985;      /* labels, dates (hand-over "quiet") */
+  --misc:    #8a8985;      /* the colour of posts with no project */
+  --cell:    380px;        /* every grid cell is this tall */
+  --page-pad: 20px;        /* inside a cell, a menu row, a head: one edge everywhere */
+  --read: 620px;           /* a paragraph, read in full */
 }
 
 /* Light: paper, not white. Follows the system; `?theme=light|dark` on any URL
@@ -24,22 +27,26 @@
   :root:not([data-theme="dark"]) {
     color-scheme: light;
     --bg:     #f2f1ee;
-    --ink:    #141414;
-    --ink-2:  #5a5955;
-    --ink-3:  #8f8d88;
-    --line:   #d8d6d1;
-    --accent-ink: #9a5200;
+    --ink:    #111111;
+    --ink-2:  #6b6a66;
+    --ink-3:  #8a8985;
+    --line:   #dcdad5;
+    --accent-ink: #a8760e;
+    --quiet:  #8a8985;
+    --misc:   #8a8985;
     --tint-mix: 68%;
   }
 }
 :root[data-theme="light"] {
   color-scheme: light;
   --bg:     #f2f1ee;
-  --ink:    #141414;
-  --ink-2:  #5a5955;
-  --ink-3:  #8f8d88;
-  --line:   #d8d6d1;
-  --accent-ink: #9a5200;
+  --ink:    #111111;
+  --ink-2:  #6b6a66;
+  --ink-3:  #8a8985;
+  --line:   #dcdad5;
+  --accent-ink: #a8760e;
+  --quiet:  #8a8985;
+  --misc:   #8a8985;
   --tint-mix: 68%;
 }
 :root[data-theme="dark"] {
@@ -50,6 +57,8 @@
   --ink-3:  #5c5c5c;
   --line:   #262626;
   --accent-ink: #ffb424;
+  --quiet:  #6a6a6a;
+  --misc:   #8a8985;
   --tint-mix: 100%;
 }
 
@@ -80,8 +89,8 @@ html, body {
 
 body {
   font-family: var(--font-body);
-  font-size: 16px;
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.4;
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -164,13 +173,16 @@ li { margin-bottom: 0.25em; }
 /* --- Small type (dates, kinds, nav) --- */
 
 .meta, .small {
-  font-size: 0.8125rem;
+  font-size: 13px;
   color: var(--ink-2);
 }
+.quiet { color: var(--quiet); }
+/* a hand-over label: "Project", "Photo · Ada" */
+.label-row { display: flex; justify-content: space-between; gap: 1rem; font-size: 13px; line-height: 16px; }
 
 .meta a { color: var(--ink-2); text-decoration: none; }
 .meta a:hover { color: var(--ink); }
 
-@media (max-width: 640px) {
+@media (max-width: 699px) {
   :root { --page-pad: 16px; }
 }

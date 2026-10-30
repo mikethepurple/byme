@@ -29,9 +29,6 @@ const posts = defineCollection({
       images: z.array(image()).default([]),
       link: z.string().url().optional().or(z.literal('')),
       draft: z.boolean().default(false),
-      // Shown in the front grid beside the projects. Chosen by hand in Keystatic,
-      // never by the publish endpoint: the publish gesture asks nothing.
-      pinned: z.boolean().default(false),
     }),
 });
 

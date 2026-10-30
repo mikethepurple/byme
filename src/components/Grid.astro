@@ -1,37 +1,76 @@
 ---
-// A ruled grid of cells, as many across as the pane allows. Each cell draws its
-// right and bottom edge, the grid its top edge; the grid is one pixel wider than
-// the pane so the last column's edge falls off. An empty slot in the last row
-// is ruled above and on its left by its neighbours, open below.
+// The grid, per the hand-over: 3 columns from 1200px, 2 from 700px, 1 below;
+// row by row, in DOM order. The last row is filled out with empty bordered
+// cells (one set for 3 columns, one for 2, each shown at its width), and
+// below the content the column lines continue to the bottom of the pane.
 import Cell from './Cell.astro';
+import { padTo } from '../lib/related';
 import type { Post, Thing } from '../lib/load';
 
 interface Props {
   things?: Thing[]; // the projects, first, on the front
+  byThing?: Map<string, Post[]>; // each project's posts, for the ledgers
   posts: Post[];
   names: Map<string, string>;
   colors?: Map<string, string>;
+  showProject?: boolean;
+  message?: string; // instead of an empty grid, e.g. "Nothing here yet."
 }
 
-const { things = [], posts, names, colors = new Map() } = Astro.props;
+const { things = [], byThing = new Map(), posts, names, colors = new Map(), showProject = true, message = 'Nothing here yet.' } = Astro.props;
+const count = things.length + posts.length;
+const for3 = count === 0 ? 2 : padTo(count, 3);
+const for2 = count === 0 ? 1 : padTo(count, 2);
 ---
 
-{things.length + posts.length === 0 && <p class="empty small">Nothing here yet.</p>}
-{
-  things.length + posts.length > 0 && (
-    <div class="grid">
-      {things.map((thing, i) => <Cell thing={thing} index={i + 1} />)}
-      {posts.map((post) => <Cell post={post} names={names} colors={colors} />)}
-    </div>
-  )
-}
+<div class="grid">
+  {things.map((thing, i) => <Cell thing={thing} index={i + 1} theirs={byThing.get(thing.id) ?? []} />)}
+  {posts.map((post) => <Cell post={post} names={names} colors={colors} showProject={showProject} />)}
+  {count === 0 && <div class="msg quiet">{message}</div>}
+  {Array.from({ length: for3 }).map(() => <div class="cell empty for3" aria-hidden="true" />)}
+  {Array.from({ length: for2 }).map(() => <div class="cell empty for2" aria-hidden="true" />)}
+</div>
+<div class="lines"></div>
 
 <style>
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    width: calc(100% + 1px);
-    border-top: 1px solid var(--line);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-content: start;
   }
-  .empty { padding: 2rem var(--page-pad); }
+  .cell.empty, .msg {
+    height: var(--cell);
+    box-sizing: border-box;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .for2 { display: none; }
+  .msg {
+    padding: 18px var(--page-pad);
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    font-size: 15px;
+  }
+  /* the column lines continue under the content */
+  .lines {
+    min-height: 100vh;
+    background-image:
+      linear-gradient(to right, transparent calc(33.333% - 1px), var(--line) calc(33.333% - 1px), var(--line) 33.333%, transparent 33.333%),
+      linear-gradient(to right, transparent calc(66.667% - 1px), var(--line) calc(66.667% - 1px), var(--line) 66.667%, transparent 66.667%);
+  }
+
+  @media (max-width: 1199px) {
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .for3 { display: none; }
+    .for2 { display: block; }
+    .lines {
+      min-height: 40vh;
+      background-image: linear-gradient(to right, transparent calc(50% - 1px), var(--line) calc(50% - 1px), var(--line) 50%, transparent 50%);
+    }
+  }
+  @media (max-width: 699px) {
+    .grid { grid-template-columns: minmax(0, 1fr); }
+    .for2, .for3 { display: none; }
+    .lines { display: none; }
+  }
 </style>
