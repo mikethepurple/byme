@@ -23,10 +23,10 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 const months = Array.from(new Set(posts.map((p) => p.data.date.slice(0, 7)))).sort().reverse();
 const years = Array.from(new Set(months.map((m) => m.slice(0, 4))));
 
-const marks = where === 'browse' || where === 'post';
+const marks = where === 'browse' || where === 'post' || where === 'front';
 const { thing, lane, month } = scope;
-// An address is /<project>/<month>/<kind>, each part optional; none at all is /everything.
-const at = (t?: string, m?: string, l?: string) => `${t ? `/${t}` : ''}${m ? `/${m}` : ''}${l ? `/${l}` : ''}` || '/everything';
+// An address is /<project>/<month>/<kind>, each part optional; none at all is the front.
+const at = (t?: string, m?: string, l?: string) => `${t ? `/${t}` : ''}${m ? `/${m}` : ''}${l ? `/${l}` : ''}` || '/';
 const hueOf = (id: string) => (id === MISC ? MISC_HUE : hues.get(id));
 const kinds = kindsPresent(scoped);
 const projects = [...things.map((t) => ({ id: t.id, name: t.data.name })), { id: MISC, name: 'misc' }];

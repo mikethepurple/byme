@@ -104,7 +104,7 @@ if (props.type === 'browse') {
     const n = props.page;
     feed = scoped.slice((n - 1) * PAGE_SIZE, n * PAGE_SIZE);
     title = `page ${n}`;
-    newer = n === 2 ? '/' : `/page/${n - 1}`;
+    newer = n === 2 ? '/' : `/page/${n - 1}`; // page 1 is the front
     older = n * PAGE_SIZE < scoped.length ? `/page/${n + 1}` : undefined;
   } else {
     feed = scoped.slice(0, PAGE_SIZE);
