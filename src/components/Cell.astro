@@ -27,10 +27,10 @@ const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } 
 
 {
   thing && (
-    <article class="cell thing">
+    <article class:list={['cell', 'thing', { tint: !!thing.data.color }]} style={thing.data.color ? `--c: ${thing.data.color}` : undefined}>
       <div class="top small">
         <span class="what">Project</span>
-        <span class="when tint" style={thing.data.color ? `--c: ${thing.data.color}` : undefined}>{String(index).padStart(2, '0')}</span>
+        <span class:list={['when', { tint: !!thing.data.color }]}>{String(index).padStart(2, '0')}</span>
       </div>
       <a href={`/${thing.id}`} class="box">
         <div class="inner">
@@ -117,6 +117,7 @@ const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } 
   .what { color: var(--ink); font-weight: 500; }
   .what a { position: relative; z-index: 1; color: inherit; text-decoration: none; }
   .what a.tint { color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
+  .what a.tint:hover { text-decoration-color: currentColor; }
   .what a:hover { text-decoration: underline; text-decoration-color: var(--accent-ink); text-underline-offset: 3px; }
   .sep { color: var(--ink-3); font-weight: 400; }
   .when { color: var(--ink-3); }
@@ -144,6 +145,7 @@ const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } 
     line-height: 1;
   }
   .box:hover .name { text-decoration: underline; text-decoration-color: var(--accent-ink); text-decoration-thickness: 2px; text-underline-offset: 6px; }
+  .cell.tint .box:hover .name { text-decoration-color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
   .line { margin: 0.75rem 0 0; max-width: 30ch; color: var(--ink-2); }
 
   /* a picture fills the box, cropped; a set is a strip of them, above the

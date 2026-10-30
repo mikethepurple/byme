@@ -40,8 +40,8 @@ const kinds = [
   <h2 class="label small">Projects</h2>
   {
     things.map((t, i) => (
-      <a href={`/${t.id}`} class:list={['row', { on: scope.thing === t.id }]}>
-        <span class:list={['n', 'small', { tint: !!t.data.color }]} style={t.data.color ? `--c: ${t.data.color}` : undefined}>
+      <a href={`/${t.id}`} class:list={['row', { on: scope.thing === t.id, tint: !!t.data.color }]} style={t.data.color ? `--c: ${t.data.color}` : undefined}>
+        <span class:list={['n', 'small', { tint: !!t.data.color }]}>
           {String(i + 1).padStart(2, '0')}
         </span>
         <span class="name">{t.data.name}</span>
@@ -113,6 +113,9 @@ const kinds = [
   .name { font-size: 1.125rem; font-weight: 500; letter-spacing: -0.01em; }
   .row:hover .name { text-decoration: underline; text-decoration-color: var(--accent-ink); text-underline-offset: 4px; }
   .row.on .name { color: var(--accent-ink); }
+  /* a project's row underlines and marks in the project's own colour */
+  .row.tint:hover .name { text-decoration-color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
+  .row.tint.on .name { color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
 
   /* everything: a place with a line saying what it is */
   .row.every { grid-template-columns: minmax(0, 1fr); gap: 2px; align-items: start; }
