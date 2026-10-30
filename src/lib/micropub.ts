@@ -217,3 +217,8 @@ export function buildPost(input: PostInput): { files: FileEntry[] } {
   files.push({ path: `src/content/posts/${input.slug}.mdoc`, content: body ? `${front}\n\n${body}\n` : `${front}\n` });
   return { files };
 }
+
+/** The project tags a client may use (`?q=category`), from the things files' paths. */
+export function categoryList(paths: string[]): string[] {
+  return paths.map((p) => p.split('/').pop()!.replace(/\.yaml$/, '')).sort();
+}

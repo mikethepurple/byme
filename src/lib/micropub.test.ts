@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseMicropubRequest, storedDateFor, buildPost, isAllowedImage, inboxPathFromUrl } from './micropub';
+import { categoryList, parseMicropubRequest, storedDateFor, buildPost, isAllowedImage, inboxPathFromUrl } from './micropub';
 
 const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
@@ -181,5 +181,12 @@ describe('buildPost — one .mdoc plus its image files, in the layout Keystatic 
     expect(mdoc).toContain('  - /src/assets/inbox/1762128900-a.jpg');
     expect(mdoc).toContain('link: https://detouri.st');
     expect(mdoc).toContain('things: []');
+  });
+});
+
+describe('categoryList — the project tags a client may use, from the things files', () => {
+  it('slugs from file paths, sorted, without the folder or extension', () => {
+    expect(categoryList(['/src/content/things/manga.yaml', '/src/content/things/ada.yaml', '/src/content/things/detourist.yaml'])).toEqual(['ada', 'detourist', 'manga']);
+    expect(categoryList([])).toEqual([]);
   });
 });

@@ -10,8 +10,7 @@ import {
   isAllowedImage,
   inboxPathFromUrl,
   MicropubError,
-  type Photo,
-} from '../lib/micropub';
+  type Photo,, categoryList } from '../lib/micropub';
 import { slugFor } from '../lib/slug';
 import { listPostSlugs, commitFiles, GitHubError } from '../lib/github';
 import { REPO, MAX_UPLOAD_BYTES, publishEnv, authorized, json } from '../lib/env';
@@ -19,9 +18,7 @@ import { REPO, MAX_UPLOAD_BYTES, publishEnv, authorized, json } from '../lib/env
 export const prerender = false;
 
 // Known thing slugs, from the files at build time (a new thing is a deploy anyway).
-const THINGS = Object.keys(import.meta.glob('/src/content/things/*.yaml')).map(
-  (p) => p.split('/').pop()!.replace(/\.yaml$/, ''),
-);
+const THINGS = categoryList(Object.keys(import.meta.glob('/src/content/things/*.yaml')));
 
 export const GET: APIRoute = async ({ request, locals }) => {
   const env = publishEnv(locals);
@@ -40,6 +37,8 @@ export const GET: APIRoute = async ({ request, locals }) => {
       ],
     });
   }
+  // The project tags, for a Shortcut's list or a client's tag suggestions (Micropub q=category).
+  if (q === 'category') return json({ categories: THINGS });
   if (q === 'syndicate-to') return json({ 'syndicate-to': [] });
   return json({});
 };
