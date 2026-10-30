@@ -37,7 +37,7 @@ const tint = (c: string) => `--c: ${c}`;
       {
         things.map((t, i) => (
           <a href={at(t.id, month, lane)} class:list={['project', { on: marks && thing === t.id, tint: !!t.data.color }]} style={t.data.color ? tint(t.data.color) : undefined}>
-            <span class:list={['n', 'small', { tint: !!t.data.color }]}>{String(i + 1).padStart(2, '0')}</span>
+            <span class:list={['n', { tint: !!t.data.color }]}>{String(i + 1).padStart(2, '0')}</span>
             {t.data.name}
           </a>
         ))
@@ -54,7 +54,7 @@ const tint = (c: string) => `--c: ${c}`;
   <div class="filter">
     <span class="k small">when</span>
     <span class="options">
-      <a href={at(thing, undefined, lane)} class:list={[{ on: marks && !month }]}>all time</a>
+      <a href={at(thing, undefined, lane)} class:list={[{ on: marks && !month }]}>all</a>
       {
         years.map((y) => (
           <>
@@ -91,16 +91,16 @@ const tint = (c: string) => `--c: ${c}`;
     border-bottom: 1px solid var(--line);
   }
   .filter .k { color: var(--ink-3); }
-  .options { display: flex; flex-wrap: wrap; gap: 0.35rem 1.1rem; }
-  .options a { color: var(--ink-2); text-decoration: none; }
+  /* every row starts with "all", so the options line up across the rows */
+  .options { display: flex; flex-wrap: wrap; gap: 0.35rem 1.25rem; }
+  .options a { color: var(--ink-2); text-decoration: none; white-space: nowrap; }
   .options a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
   .options a.on { color: var(--accent-ink); }
-  .options .year { color: var(--ink); }
-  .options .year.on { color: var(--accent-ink); }
 
-  /* a project: its number in its colour; marked and underlined in its colour too */
-  .project .n { margin-right: 0.3rem; color: var(--ink-3); }
-  .project .n.tint { font-weight: 500; color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
+  /* a project: number and name one unit, the number in the project's colour at
+     the same size; marked and underlined in its colour too */
+  .project .n { margin-right: 0.3em; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .project .n.tint { color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
   .project.tint:hover { text-decoration-color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
   .project.tint.on { color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
 

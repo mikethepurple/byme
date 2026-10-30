@@ -1,9 +1,12 @@
 ---
-// An open post, at reading width, nothing around it: title if there is one, a
-// meta line, the pictures, the text. Newer / older at the end.
+// An open post, at reading width: the same label row as its cell (kind ·
+// project, the date on the right), the title if there is one, the pictures,
+// the text. A note without a title shows its text large: the note is its own
+// headline. Newer / older at the end. The post keeps a minimum height so what
+// follows sits well below it, even when the post is three lines.
 import { Image } from 'astro:assets';
 import { render } from 'astro:content';
-import { formatDate } from '../lib/posts';
+import { formatDate, laneOf } from '../lib/posts';
 import type { Post } from '../lib/load';
 
 interface Props {
@@ -18,26 +21,31 @@ const { post, names, colors = new Map(), newer, older } = Astro.props;
 const { Content } = await render(post);
 const offset = post.data.date.match(/(Z|[+-]\d\d:?\d\d)$/)?.[1];
 const link = post.data.link || '';
+const KIND = { photo: 'Photo', set: 'Set', note: 'Note', longread: 'Longread' } as const;
+const lead = !post.data.title && post.kind === 'note';
 ---
 
-<article class="post" transition:name={`post-${post.id}`}>
-  {post.data.title && <h1 class="title">{post.data.title}</h1>}
-  <p class="meta small">
-    <time datetime={post.when.toISOString()}>{formatDate(post.data.date)}</time>
-    {offset && <span class="zone"> UTC{offset === 'Z' ? '' : offset}</span>}
-    <span class="sep"> · </span>
-    {post.kind}
-    {
-      post.things.map((id) => (
-        <>
-          <span class="sep"> · </span>
-          <a href={`/${id}`} class:list={[{ tint: colors.has(id) }]} style={colors.has(id) ? `--c: ${colors.get(id)}` : undefined}>
-            {names.get(id) ?? id}
-          </a>
-        </>
-      ))
-    }
+<article class={`post kind-${post.kind}`} transition:name={`post-${post.id}`}>
+  <p class="top small">
+    <span class="what">
+      <a href={`/${laneOf(post.kind)}`}>{KIND[post.kind]}</a>
+      {
+        post.things.map((id) => (
+          <>
+            <span class="sep"> · </span>
+            <a href={`/${id}`} class:list={[{ tint: colors.has(id) }]} style={colors.has(id) ? `--c: ${colors.get(id)}` : undefined}>
+              {names.get(id) ?? id}
+            </a>
+          </>
+        ))
+      }
+    </span>
+    <span class="when">
+      <time datetime={post.when.toISOString()}>{formatDate(post.data.date)}</time>
+      {offset && <span class="zone"> UTC{offset === 'Z' ? '' : offset}</span>}
+    </span>
   </p>
+  {post.data.title && <h1 class="title">{post.data.title}</h1>}
   {
     post.data.images.map((img) => (
       <a href={img.src} class="pic" title={`${img.width} × ${img.height}`}>
@@ -45,10 +53,10 @@ const link = post.data.link || '';
       </a>
     ))
   }
-  {link && <p class="link"><a href={link}>{link.replace(/^https?:\/\//, '').replace(/\/$/, '')}</a></p>}
+  {link && <p class:list={['link', { lead }]}><a href={link}>{link.replace(/^https?:\/\//, '').replace(/\/$/, '')}</a></p>}
   {
     post.text && (
-      <div class="body">
+      <div class:list={['body', { lead }]}>
         <Content />
       </div>
     )
@@ -64,19 +72,31 @@ const link = post.data.link || '';
 </article>
 
 <style>
-  .post { padding: 40px var(--pad-wide) 64px; max-width: calc(var(--read) + 2 * var(--pad-wide)); }
+  .post {
+    display: flex;
+    flex-direction: column;
+    min-height: 64vh;
+    padding: 28px var(--pad-wide) 48px;
+    max-width: calc(var(--read) + 2 * var(--pad-wide));
+  }
+
+  /* the label row, as on the cell this post came from */
+  .top { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin: 0 0 1.75rem; }
+  .what { color: var(--ink); font-weight: 500; }
+  .what a { color: inherit; text-decoration: none; }
+  .what a:hover { text-decoration: underline; text-decoration-color: var(--accent-ink); text-underline-offset: 3px; }
+  .what a.tint { color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
+  .what a.tint:hover { text-decoration-color: currentColor; }
+  .sep, .zone { color: var(--ink-3); font-weight: 400; }
+  .when { color: var(--ink-3); white-space: nowrap; }
+
   .title {
     font-size: clamp(1.75rem, 4cqw, 2.25rem);
     font-weight: 600;
     letter-spacing: -0.02em;
     line-height: 1.15;
-    margin: 0 0 0.75rem;
+    margin: 0 0 1.5rem;
   }
-  .meta { margin: 0 0 1.5rem; color: var(--ink-2); }
-  .meta a { color: var(--ink-2); text-decoration: none; }
-  .meta a.tint { color: color-mix(in oklab, var(--c) var(--tint-mix), #000); }
-  .meta a:hover { color: var(--ink); text-decoration: underline; }
-  .sep, .zone { color: var(--ink-3); }
 
   .pic { display: block; margin: 0 0 1.5rem; }
   .pic :global(img) { width: 100%; height: auto; }
@@ -90,8 +110,16 @@ const link = post.data.link || '';
   .body :global(img) { margin: 1.5rem 0; }
   .body :global(p:last-child) { margin-bottom: 0; }
 
-  .around { display: flex; justify-content: space-between; margin: 3rem 0 0; }
+  /* a note with no title: its text is the headline */
+  .lead, .body.lead { font-size: clamp(1.375rem, 2.4cqw, 1.75rem); line-height: 1.35; letter-spacing: -0.01em; }
+  .body.lead :global(p) { margin: 0 0 1em; }
+
+  .around { display: flex; justify-content: space-between; margin: auto 0 0; padding-top: 3rem; }
   .around a { color: var(--ink-2); text-decoration: none; }
   .around a:hover { color: var(--ink); }
   .around .older { margin-left: auto; }
+
+  @media (max-width: 900px) {
+    .post { min-height: 0; }
+  }
 </style>
