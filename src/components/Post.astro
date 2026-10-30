@@ -1,0 +1,93 @@
+---
+// An open post, at reading width, nothing around it: title if there is one, a
+// meta line, the pictures, the text. Newer / older at the end.
+import { Image } from 'astro:assets';
+import { render } from 'astro:content';
+import { formatDate } from '../lib/posts';
+import type { Post } from '../lib/load';
+
+interface Props {
+  post: Post;
+  names: Map<string, string>;
+  newer?: Post;
+  older?: Post;
+}
+
+const { post, names, newer, older } = Astro.props;
+const { Content } = await render(post);
+const offset = post.data.date.match(/(Z|[+-]\d\d:?\d\d)$/)?.[1];
+const link = post.data.link || '';
+---
+
+<article class="post" transition:name={`post-${post.id}`}>
+  {post.data.title && <h1 class="title">{post.data.title}</h1>}
+  <p class="meta small">
+    <time datetime={post.when.toISOString()}>{formatDate(post.data.date)}</time>
+    {offset && <span class="zone"> UTC{offset === 'Z' ? '' : offset}</span>}
+    <span class="sep"> · </span>
+    {post.kind}
+    {
+      post.things.map((id) => (
+        <>
+          <span class="sep"> · </span>
+          <a href={`/${id}`}>{names.get(id) ?? id}</a>
+        </>
+      ))
+    }
+  </p>
+  {
+    post.data.images.map((img) => (
+      <a href={img.src} class="pic" title={`${img.width} × ${img.height}`}>
+        <Image src={img} alt={post.data.title || ''} widths={[680, 1360, 2040]} sizes="(max-width: 900px) 100vw, 44vw" />
+      </a>
+    ))
+  }
+  {link && <p class="link"><a href={link}>{link.replace(/^https?:\/\//, '').replace(/\/$/, '')}</a></p>}
+  {
+    post.text && (
+      <div class="body">
+        <Content />
+      </div>
+    )
+  }
+  {
+    (newer || older) && (
+      <p class="around small">
+        {newer && <a href={`/${newer.id}`} class="newer">← newer</a>}
+        {older && <a href={`/${older.id}`} class="older">older →</a>}
+      </p>
+    )
+  }
+</article>
+
+<style>
+  .post { padding: 40px var(--pad-wide) 64px; max-width: calc(var(--read) + 2 * var(--pad-wide)); }
+  .title {
+    font-size: clamp(1.75rem, 4cqw, 2.25rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin: 0 0 0.75rem;
+  }
+  .meta { margin: 0 0 1.5rem; color: var(--ink-2); }
+  .meta a { color: var(--ink-2); text-decoration: none; }
+  .meta a:hover { color: var(--ink); text-decoration: underline; }
+  .sep, .zone { color: var(--ink-3); }
+
+  .pic { display: block; margin: 0 0 1.5rem; }
+  .pic :global(img) { width: 100%; height: auto; }
+
+  .link { margin: 0 0 1.5rem; font-size: 1.0625rem; }
+
+  .body { font-size: 1.0625rem; line-height: 1.65; }
+  .body :global(p) { margin: 0 0 1.25em; }
+  .body :global(h1), .body :global(h2) { font-size: 1.25rem; margin: 2rem 0 0.75rem; }
+  .body :global(h3) { font-size: 1.0625rem; margin: 1.5rem 0 0.5rem; }
+  .body :global(img) { margin: 1.5rem 0; }
+  .body :global(p:last-child) { margin-bottom: 0; }
+
+  .around { display: flex; justify-content: space-between; margin: 3rem 0 0; }
+  .around a { color: var(--ink-2); text-decoration: none; }
+  .around a:hover { color: var(--ink); }
+  .around .older { margin-left: auto; }
+</style>

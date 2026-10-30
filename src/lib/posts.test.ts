@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { kindOf, parseDate, formatDate, formatShort, toIsoInZone, wallParts, LONGREAD_CHARS } from './posts';
+import { kindOf, parseDate, formatDate, formatShort, toIsoInZone, wallParts, plain, LONGREAD_CHARS } from './posts';
 
 describe('kindOf — inferred from what was dropped, never stored', () => {
   it('one image → photo, whatever text comes with it', () => {
@@ -62,5 +62,28 @@ describe('formatDate / formatShort — the block date line, as posted', () => {
     expect(formatDate('2026-11-03T09:15:00+09:00')).toBe('3 Nov 2026, 09:15');
     expect(formatDate('2026-10-29T19:11')).toBe('29 Oct 2026, 19:11');
     expect(formatShort('2026-11-03T09:15:00+09:00')).toBe('3 Nov, 09:15');
+  });
+});
+
+describe('plain — the body as words only, for cells and lists', () => {
+  it('drops images, keeps link labels, strips emphasis, headings, quotes and bullets', () => {
+    const md = [
+      '*A placeholder, from [The Elements of Drawing](https://www.gutenberg.org/ebooks/30325) (1857).*',
+      '',
+      '![a picture](../../assets/posts/x/1.jpg)',
+      '',
+      '## Exercise I',
+      '',
+      '> The pen should walk slowly.',
+      '',
+      '- a **steel** pen;',
+      '- some `ink`.',
+    ].join('\n');
+    expect(plain(md)).toBe(
+      ['A placeholder, from The Elements of Drawing (1857).', '', 'Exercise I', '', 'The pen should walk slowly.', '', 'a steel pen;', 'some ink.'].join('\n'),
+    );
+  });
+  it('leaves plain text alone', () => {
+    expect(plain('Hey folks, how are you.')).toBe('Hey folks, how are you.');
   });
 });

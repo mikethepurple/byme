@@ -1,0 +1,174 @@
+---
+// The right pane: the name, then everything you can pick (projects, when,
+// kind), then rss and the theme toggle. Below it, a short list of posts that
+// belongs to the page: the latest on the front, similar ones beside an open post.
+// Nothing here carries a transition name; the left pane does the morphing.
+import { Image } from 'astro:assets';
+import { formatShort } from '../lib/posts';
+import { firstLine, type Post, type Thing, type Scope } from '../lib/load';
+
+interface Props {
+  things: Thing[];
+  posts: Post[]; // all posts, for the When list
+  names?: Map<string, string>;
+  scope?: Scope; // what is marked
+  where?: 'front' | 'browse' | 'read';
+  related?: { title: string; posts: Post[] };
+}
+
+const { things, posts, scope = {}, where = 'browse', related } = Astro.props;
+const names = Astro.props.names ?? new Map(things.map((t) => [t.id, t.data.name]));
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const months = Array.from(new Set(posts.map((p) => p.data.date.slice(0, 7)))).sort().reverse();
+const years = Array.from(new Set(months.map((m) => m.slice(0, 4))));
+
+// Where the kind links live: inside the project or month in force.
+const base = scope.thing ? `/${scope.thing}` : scope.month ? `/${scope.month}` : '';
+const kinds = [
+  { id: 'all', href: base || '/everything', on: where === 'browse' && !scope.lane },
+  { id: 'photos', href: `${base}/photos`, on: scope.lane === 'photos' },
+  { id: 'longreads', href: `${base}/longreads`, on: scope.lane === 'longreads' },
+  { id: 'notes', href: `${base}/notes`, on: scope.lane === 'notes' },
+];
+const everythingOn = where === 'browse' && !scope.thing;
+---
+
+<div class="brand-row">
+  <a href="/" class="brand"><span class="dot"></span>by.erikov.me</a>
+</div>
+
+<nav id="nav" class="nav">
+  <h2 class="label small">Projects I'm working on</h2>
+  <a href="/everything" class:list={['row', { on: everythingOn }]}>
+    <span class="n small"></span>
+    <span class="name">everything</span>
+  </a>
+  {
+    things.map((t, i) => (
+      <a href={`/${t.id}`} class:list={['row', { on: scope.thing === t.id }]}>
+        <span class="n small">{String(i + 1).padStart(2, '0')}</span>
+        <span class="name">{t.data.name}</span>
+      </a>
+    ))
+  }
+
+  <h2 class="label small">When</h2>
+  <a href={scope.thing ? `/${scope.thing}` : '/everything'} class:list={['row', 'plain', { on: where === 'browse' && !scope.month }]}>
+    all time
+  </a>
+  {
+    years.map((y) => (
+      <div class="row plain year">
+        <a href={`/${y}`} class:list={[{ on: y === scope.month }]}>{y}</a>
+        <span class="months">
+          {months
+            .filter((m) => m.startsWith(y))
+            .map((m) => (
+              <a href={`/${m}`} class:list={[{ on: m === scope.month }]}>{MONTHS[+m.slice(5, 7) - 1]}</a>
+            ))}
+        </span>
+      </div>
+    ))
+  }
+
+  <h2 class="label small">Kind</h2>
+  <div class="row plain kinds">
+    {kinds.map((k) => <a href={k.href} class:list={[{ on: k.on }]}>{k.id}</a>)}
+  </div>
+
+  <div class="row plain foot small">
+    <a href="/rss.xml">rss</a>
+    <button type="button" class="theme-toggle" aria-label="Switch between light and dark">dark</button>
+  </div>
+</nav>
+
+{
+  related && related.posts.length > 0 && (
+    <section class="related">
+      <h2 class="label small">{related.title}</h2>
+      {related.posts.map((p) => (
+        <a href={`/${p.id}`} class="rel">
+          {p.data.images[0] && (
+            <span class="thumb">
+              <Image src={p.data.images[0]} alt="" widths={[120, 240]} sizes="60px" loading="lazy" />
+            </span>
+          )}
+          <span class="what">
+            {(() => {
+              const t = p.data.title || firstLine(p.plain, 70) || (p.data.link ? p.data.link.replace(/^https?:\/\//, '') : '');
+              const d = [p.kind, ...p.things.map((id) => names.get(id) ?? id), formatShort(p.data.date)].join(' · ');
+              return t ? (
+                <>
+                  <span class="t">{t}</span>
+                  <span class="d small">{d}</span>
+                </>
+              ) : (
+                <span class="t">{d}</span>
+              );
+            })()}
+          </span>
+        </a>
+      ))}
+    </section>
+  )
+}
+
+<style>
+  .brand-row { padding: 14px var(--page-pad); border-bottom: 1px solid var(--line); }
+  .brand { display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; font-weight: 500; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+
+  .label {
+    font-weight: 400;
+    color: var(--ink-3);
+    margin: 0;
+    padding: 18px var(--page-pad) 6px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    gap: 1rem;
+    align-items: baseline;
+    min-height: 48px;
+    padding: 12px var(--page-pad);
+    border-bottom: 1px solid var(--line);
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .row.plain { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; }
+  .row .n { color: var(--ink-3); }
+  .name { font-size: 1.125rem; font-weight: 500; letter-spacing: -0.01em; }
+  a.row:hover .name { text-decoration: underline; text-decoration-color: var(--accent-ink); text-underline-offset: 4px; }
+  .row.on .name, .row.plain.on, .row.plain a.on { color: var(--accent-ink); }
+
+  .year { display: grid; grid-template-columns: 4rem minmax(0, 1fr); }
+  .year a, .kinds a, .months a { text-decoration: none; color: var(--ink); }
+  .year a:hover, .kinds a:hover, .months a:hover { text-decoration: underline; }
+  .months { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; }
+  .kinds a { color: var(--ink-2); }
+  .kinds a.on { color: var(--accent-ink); }
+
+  .foot a, .theme-toggle { color: var(--ink-2); text-decoration: none; }
+  .foot a:hover, .theme-toggle:hover { color: var(--ink); }
+  .theme-toggle { font: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+
+  .related { margin-top: 28px; }
+  .rel {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0 14px;
+    align-items: center;
+    padding: 12px var(--page-pad);
+    border-bottom: 1px solid var(--line);
+    text-decoration: none;
+    color: var(--ink);
+  }
+  .rel:hover .t { text-decoration: underline; text-decoration-color: var(--accent-ink); text-underline-offset: 3px; }
+  .thumb { width: 60px; height: 60px; display: block; }
+  .thumb :global(img) { width: 60px; height: 60px; object-fit: cover; }
+  .what { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+</style>

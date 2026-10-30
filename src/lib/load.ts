@@ -1,8 +1,13 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
-import { kindOf, parseDate, laneOf, type Kind } from './posts';
+import { kindOf, parseDate, laneOf, plain, type Kind } from './posts';
 
-export type Post = CollectionEntry<'posts'> & { kind: Kind; when: Date; text: string };
+// `things` (ids) and `pinned` are lifted out of `data` so a Post satisfies the
+// `Like` shape the pure helpers in related.ts work on.
+export type Post = CollectionEntry<'posts'> & { kind: Kind; when: Date; text: string; plain: string; things: string[]; pinned: boolean };
 export type Thing = CollectionEntry<'things'>;
+
+/** A cell of a grid: a project with its number, or a post. */
+export type Item = { kind: 'thing'; thing: Thing; index: number } | { kind: 'post'; post: Post };
 
 export const LANES = ['photos', 'longreads', 'notes'] as const;
 export type Lane = (typeof LANES)[number];
@@ -16,7 +21,14 @@ export async function loadPosts(): Promise<Post[]> {
     .map((p) => {
       const text = (p.body ?? '').trim();
       const kind = kindOf({ images: p.data.images.length, body: text, link: p.data.link || undefined });
-      return Object.assign(p, { kind, when: parseDate(p.data.date), text });
+      return Object.assign(p, {
+        kind,
+        when: parseDate(p.data.date),
+        text,
+        plain: plain(text),
+        things: p.data.things.map((t) => t.id),
+        pinned: p.data.pinned,
+      });
     })
     .sort((a, b) => b.when.getTime() - a.when.getTime());
 }

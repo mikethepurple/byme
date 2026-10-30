@@ -71,10 +71,12 @@ export default config({
         }),
         link: fields.url({ label: 'Link (optional)' }),
         draft: fields.checkbox({ label: 'Draft', defaultValue: false }),
+        pinned: fields.checkbox({ label: 'Show on the front page', defaultValue: false }),
         body: fields.markdoc({
           label: 'Text',
           options: {
-            image: { directory: 'src/assets/posts', publicPath: '/src/assets/posts/' },
+            // Relative to the post file: the Markdoc integration only optimizes relative paths.
+            image: { directory: 'src/assets/posts', publicPath: '../../assets/posts/' },
           },
         }),
       },

@@ -1,22 +1,25 @@
 ---
+// The front: a grid of the projects and whatever is pinned, the navigation
+// and the latest posts on the right.
 import TwoPane from '../layouts/TwoPane.astro';
-import Index from '../components/Index.astro';
-import Column from '../components/Column.astro';
-import { loadPosts, loadThings, thingNames, PAGE_SIZE } from '../lib/load';
+import Nav from '../components/Nav.astro';
+import Grid from '../components/Grid.astro';
+import { frontCells } from '../lib/related';
+import { loadPosts, loadThings, thingNames, type Item } from '../lib/load';
 
 export const prerender = true;
+
+const LATEST = 8;
 
 const things = await loadThings();
 const posts = await loadPosts();
 const names = thingNames(things);
+const items: Item[] = frontCells(things, posts).map((c) =>
+  c.kind === 'thing' ? { kind: 'thing', thing: c.thing, index: things.indexOf(c.thing) + 1 } : { kind: 'post', post: c.post },
+);
 ---
 
-<TwoPane title="by.erikov.me" split="front" feed={{ label: 'everything', base: '', allHref: '/' }}>
-  <Index slot="left" things={things} posts={posts} />
-  <Column
-    slot="right"
-    posts={posts.slice(0, PAGE_SIZE)}
-    things={names}
-    older={posts.length > PAGE_SIZE ? '/page/2' : undefined}
-  />
+<TwoPane title="by.erikov.me">
+  <Grid slot="content" items={items} names={names} />
+  <Nav slot="side" things={things} posts={posts} where="front" related={{ title: 'Latest', posts: posts.slice(0, LATEST) }} />
 </TwoPane>

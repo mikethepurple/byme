@@ -111,3 +111,21 @@ export function formatShort(stored: string): string {
   const p = wallParts(stored);
   return `${+p.day} ${MONTHS[+p.month - 1]}, ${p.hour}:${p.minute}`;
 }
+
+/**
+ * The body as words only, for a cell or a list row: images go, links keep
+ * their label, emphasis, headings, quote and bullet marks are stripped.
+ */
+export function plain(md: string): string {
+  return md
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/^#{1,6}[ \t]+/gm, '')
+    .replace(/^>[ \t]?/gm, '')
+    .replace(/^[ \t]*[-*+][ \t]+/gm, '')
+    .replace(/(\*\*|__)(.+?)\1/g, '$2')
+    .replace(/(\*|_)(.+?)\1/g, '$2')
+    .replace(/`([^`]*)`/g, '$1')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
