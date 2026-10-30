@@ -49,7 +49,8 @@ export function ledger(posts: Like[], n: number): LedgerRow[] {
   for (const p of posts) {
     if (rows.length >= n) break;
     const row = { id: p.id, kind: KIND_LABEL[p.kind], title: titleOf(p), date: formatShort(p.date).split(',')[0] };
-    const key = `${row.kind}|${row.title}|${row.date}`;
+    // a repeat is the same text posted twice within a minute, not two photos on one day
+    const key = `${row.kind}|${row.title}|${p.date.slice(0, 16)}|${p.title || p.plain ? '' : p.id}`;
     if (seen.has(key)) continue;
     seen.add(key);
     rows.push(row);

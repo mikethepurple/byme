@@ -51,9 +51,13 @@ describe('ledger — the latest posts of a project, always n rows', () => {
     );
     expect(rows.map((r) => r.title)).toEqual(['3 photos', 'Photo', 'Hey folks, how are you.']);
   });
+  it('three untitled photos on one day are three rows', () => {
+    const ph = (id: string, t: string) => post(id, t, ['detourist'], 'photo');
+    expect(ledger([ph('a', '2026-10-30T18:42:00+01:00'), ph('b', '2026-10-30T18:28:00+01:00'), ph('c', '2026-10-30T16:55:00+01:00')], 4).filter((r) => r.id)).toHaveLength(3);
+  });
   it('never shows the same row twice', () => {
     const twin = (id: string, when: string) => post(id, when, ['ada'], 'note', 'Test from curl');
-    const rows = ledger([twin('a', '2026-10-29T20:08:00+01:00'), twin('b', '2026-10-29T20:06:00+01:00'), post('c', '2026-10-28T20:06:00+01:00', ['ada'], 'note', 'Other')], 4);
+    const rows = ledger([twin('a', '2026-10-29T20:08:00+01:00'), twin('b', '2026-10-29T20:08:30+01:00'), post('c', '2026-10-28T20:06:00+01:00', ['ada'], 'note', 'Other')], 4);
     expect(rows.filter((r) => r.id).map((r) => r.title)).toEqual(['Test from curl', 'Other']);
   });
 });
