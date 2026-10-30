@@ -33,4 +33,16 @@ const posts = defineCollection({
     }),
 });
 
-export const collections = { things, posts };
+// About: one entry (about.yaml), edited in Keystatic as a singleton.
+const about = defineCollection({
+  loader: glob({ pattern: '**/*.yaml', base: './src/content/about' }),
+  schema: ({ image }) =>
+    z.object({
+      name: z.string(),
+      bio: z.string().default(''),
+      email: z.string().default(''),
+      portrait: image().optional(),
+    }),
+});
+
+export const collections = { things, posts, about };

@@ -1,4 +1,4 @@
-import { config, fields, collection } from '@keystatic/core';
+import { config, fields, collection, singleton } from '@keystatic/core';
 
 // Local mode in `astro dev` so posts can be opened and saved without GitHub;
 // GitHub mode in production (the admin at /keystatic commits to the repo).
@@ -82,6 +82,19 @@ export default config({
             image: { directory: 'src/assets/posts', publicPath: '../../assets/posts/' },
           },
         }),
+      },
+    }),
+  },
+  singletons: {
+    about: singleton({
+      label: 'About',
+      path: 'src/content/about/about',
+      format: { data: 'yaml' },
+      schema: {
+        name: fields.text({ label: 'Name' }),
+        bio: fields.text({ label: 'Bio', multiline: true }),
+        email: fields.text({ label: 'Contact email' }),
+        portrait: fields.image({ label: 'Portrait', directory: 'src/assets/about', publicPath: '/src/assets/about/' }),
       },
     }),
   },
