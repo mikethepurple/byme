@@ -35,8 +35,8 @@
 
 /* A project's colour: --c is the exact paper value, --cd the brighter one for
    dark; an element with class .proj carries both and reads --pc. */
-.proj { --pc: var(--c); }
-:root[data-theme="dark"] .proj { --pc: var(--cd, var(--c)); }
+.proj, .hued { --pc: var(--c); }
+:root[data-theme="dark"] .proj, :root[data-theme="dark"] .hued { --pc: var(--cd, var(--c)); }
 
 /* View transitions: one easing and one duration for everything that moves,
    a quick cross-fade for the rest. */
