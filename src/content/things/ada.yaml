@@ -1,7 +1,7 @@
 name: Ada
 line: A sketchbook for the iPad that reads what I draw and answers on the page.
 color: '#a8760e'
-colorDark: '#ffb424'
+colorDark: '#e0a43a'
 order: 1
 try:
   - label: Try Ada

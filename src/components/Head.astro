@@ -67,15 +67,15 @@ const line = !!frame && design === 'c'; // B with the line under the top row in 
   .wrap { flex: 1 1 auto; display: flex; flex-direction: column; }
   .frame { flex: 1 1 auto; display: flex; flex-direction: column; }
   .wrap.framed { padding: 14px 14px 0; }
-  .wrap.framed .frame { border: 1px solid var(--ink); }
+  .wrap.framed .frame { border: 1px solid var(--frame); }
   .wrap.framed.dashed { padding-bottom: 14px; }
-  .wrap.framed.dashed .frame { border-style: dashed; }
+  .wrap.framed.dashed .frame { border-style: dashed; border-color: var(--dash); }
   .frame.tab .top { background: color-mix(in srgb, var(--pc) 8%, var(--bg)); }
   /* in a project frame the top row is thin, as on the cards */
   .wrap.framed .top { padding: 9px 14px; line-height: 16px; }
   .frame.tintline .top { border-bottom-color: var(--pc); }
   .stack { height: 32px; flex-shrink: 0; overflow: hidden; display: flex; flex-direction: column; }
-  .edge { height: 3px; flex-shrink: 0; box-sizing: border-box; border: 1px solid var(--ink); border-top: none; }
+  .edge { height: 3px; flex-shrink: 0; box-sizing: border-box; border: 1px solid var(--edge); border-top: none; }
   @media (max-width: 699px) {
     .wrap.framed { padding: 12px 12px 0; }
     .stack { height: 30px; }

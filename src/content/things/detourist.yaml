@@ -1,7 +1,7 @@
 name: Detourist
 line: One spot a day on a walk I already take, in a city I already know.
 color: '#b3261e'
-colorDark: '#ff3b30'
+colorDark: '#f2685c'
 order: 2
 try:
   - label: detouri.st

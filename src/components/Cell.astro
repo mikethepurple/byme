@@ -147,7 +147,7 @@ const aria = post ? `${titleOf(post, 80)}, ${formatShort(post.data.date)}` : '';
     display: flex;
     flex-direction: column;
   }
-  .project.none .frame { border-style: dashed; }
+  .project.none .frame { border-style: dashed; border-color: var(--dash); }
   .tabrow { display: flex; justify-content: space-between; font-size: 13px; }
   .project.tab .tabrow {
     background: color-mix(in srgb, var(--pc) 8%, var(--bg));
@@ -168,7 +168,7 @@ const aria = post ? `${titleOf(post, 80)}, ${formatShort(post.data.date)}` : '';
   .project:hover .name { color: var(--ink-2); }
   .desc { margin: 10px 0 0; font-size: 15px; line-height: 1.4; color: var(--ink-2); max-width: 290px; min-height: 42px; }
   .grow { flex: 1 1 auto; }
-  .ledger { display: flex; flex-direction: column; border-top: 1px solid var(--ink); }
+  .ledger { display: flex; flex-direction: column; border-top: 1px solid var(--frame); }
   .lrow {
     display: grid;
     grid-template-columns: 64px minmax(0, 1fr) auto;
@@ -185,7 +185,7 @@ const aria = post ? `${titleOf(post, 80)}, ${formatShort(post.data.date)}` : '';
   .ext { position: relative; z-index: 1; color: var(--ink); }
   .ext:hover { color: var(--ink-2); }
   .stack { height: 32px; flex-shrink: 0; overflow: hidden; display: flex; flex-direction: column; }
-  .edge { height: 3px; flex-shrink: 0; box-sizing: border-box; border: 1px solid var(--ink); border-top: none; }
+  .edge { height: 3px; flex-shrink: 0; box-sizing: border-box; border: 1px solid var(--edge); border-top: none; }
 
   /* a post */
   .post { gap: 12px; }
@@ -194,5 +194,4 @@ const aria = post ? `${titleOf(post, 80)}, ${formatShort(post.data.date)}` : '';
   .title { font-size: 20px; font-weight: 500; letter-spacing: -0.02em; }
   .text { font-size: 15px; color: var(--ink-2); line-height: 1.45; }
   .open { position: absolute; inset: 0; }
-  .post:hover .title { color: var(--ink-2); }
 </style>
