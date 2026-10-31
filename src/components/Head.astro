@@ -69,6 +69,8 @@ const tab = !!frame && import.meta.env.PUBLIC_DESIGN !== 'b';
   .wrap.framed.dashed { padding-bottom: 14px; }
   .wrap.framed.dashed .frame { border-style: dashed; }
   .frame.tab .top { background: color-mix(in srgb, var(--pc) 8%, var(--bg)); }
+  /* in a project frame the top row is thin, as on the cards */
+  .wrap.framed .top { padding: 9px 14px; line-height: 16px; }
   .stack { height: 32px; flex-shrink: 0; overflow: hidden; display: flex; flex-direction: column; }
   .edge { height: 3px; flex-shrink: 0; box-sizing: border-box; border: 1px solid var(--ink); border-top: none; }
   @media (max-width: 699px) {
