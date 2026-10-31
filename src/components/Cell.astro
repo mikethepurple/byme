@@ -32,7 +32,7 @@ const thingHue: Hue | undefined = thing ? (thing.data.color ? { c: thing.data.co
 const rows = thing ? ledger(theirs, 3) : [];
 const edges = stackEdges(theirs.length);
 // Version A (tinted tab) or B (ink only), chosen at build time for the A/B previews.
-const tab = (import.meta.env.PUBLIC_DESIGN ?? 'a') === 'a';
+const tab = (import.meta.env.PUBLIC_DESIGN ?? 'b') === 'a';
 const count = theirs.length;
 
 const imgs = post?.data.images ?? [];

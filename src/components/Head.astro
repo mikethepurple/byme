@@ -19,7 +19,7 @@ interface Props {
 }
 
 const { left, right, title, size = 'page', description, link, transitionName, frame, edges = 0, hue } = Astro.props;
-const design = import.meta.env.PUBLIC_DESIGN ?? 'a';
+const design = import.meta.env.PUBLIC_DESIGN ?? 'b';
 const tab = !!frame && design === 'a';
 const line = !!frame && design === 'c'; // B with the line under the top row in the project colour
 ---
