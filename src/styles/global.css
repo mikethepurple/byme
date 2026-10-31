@@ -13,7 +13,7 @@
   --edge:  #111111;        /* the stack of edges under a project frame */
   --dash:  #111111;        /* an empty project's dashed frame */
   --shade: #dedcd7;        /* image placeholder */
-  --photo: none;           /* a filter on photos: dimmed in dark */  /* the heavier line under a project card (hand-over 9d) */
+  --photo: none;           /* a filter on grid thumbnails: dimmed in dark, never on a post page */  /* the heavier line under a project card (hand-over 9d) */
   --accent: #f0a020;       /* the dot */
   --accent-ink: #a8760e;   /* amber as text */
   --quiet:  #8a8985;       /* labels, dates (hand-over "quiet") */
@@ -128,7 +128,6 @@ pre {
 pre code { background: none; padding: 0; }
 
 img, video {
-  filter: var(--photo);
   max-width: 100%;
   height: auto;
   display: block;

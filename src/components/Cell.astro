@@ -190,7 +190,7 @@ const aria = post ? `${titleOf(post, 80)}, ${formatShort(post.data.date)}` : '';
   /* a post */
   .post { gap: 12px; }
   .pic { flex: 1 1 auto; min-height: 0; }
-  .pic :global(img) { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pic :global(img) { width: 100%; height: 100%; object-fit: cover; display: block; filter: var(--photo); }
   .title { font-size: 20px; font-weight: 500; letter-spacing: -0.02em; }
   .text { font-size: 15px; color: var(--ink-2); line-height: 1.45; }
   .open { position: absolute; inset: 0; }
