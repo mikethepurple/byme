@@ -13,7 +13,7 @@
 // the title (20/500) and an excerpt of about 300 characters.
 import { Image } from 'astro:assets';
 import { formatShort, laneOf } from '../lib/posts';
-import { KIND_LABEL, MISC, excerpt, ledger, projectOf, titleOf } from '../lib/related';
+import { KIND_LABEL, MISC, excerpt, ledger, projectOf, titleOf, stackEdges } from '../lib/related';
 import { MISC_HUE, hueStyle, type Hue, type Post, type Thing } from '../lib/load';
 
 interface Props {
@@ -29,7 +29,10 @@ interface Props {
 const { thing, index = 0, theirs = [], post, names = new Map(), hues = new Map(), showProject = true } = Astro.props;
 
 const thingHue: Hue | undefined = thing ? (thing.data.color ? { c: thing.data.color, cd: thing.data.colorDark || thing.data.color } : MISC_HUE) : undefined;
-const rows = thing ? ledger(theirs, 4) : [];
+const rows = thing ? ledger(theirs, 3) : [];
+const edges = stackEdges(theirs.length);
+// Version A (tinted tab) or B (ink only), chosen at build time for the A/B previews.
+const tab = import.meta.env.PUBLIC_DESIGN !== 'b';
 const count = theirs.length;
 
 const imgs = post?.data.images ?? [];
@@ -42,35 +45,37 @@ const aria = post ? `${titleOf(post, 80)}, ${formatShort(post.data.date)}` : '';
 
 {
   thing && (
-    <article class="cell project proj" style={hueStyle(thingHue)}>
-      <div class="label-row">
-        <span>Project</span>
-        <span class="c">{String(index).padStart(2, '0')}</span>
-      </div>
-      <div class="ledger">
-        {rows.map((r) => (
-          <div class="lrow">
-            <span class="quiet">{r.kind}</span>
-            <span class="t">{r.title}</span>
-            <span class="quiet">{r.date}</span>
+    <article class:list={['cell', 'project', 'proj', { tab, none: count === 0 }]} style={hueStyle(thingHue)}>
+      <div class="frame">
+        <div class="tabrow">
+          <span>Project</span>
+          <span class="c">{String(index).padStart(2, '0')}</span>
+        </div>
+        <a href={`/${thing.id}`} class="name" transition:name={`thing-${thing.id}`} aria-label={`${thing.data.name}: all posts`}>
+          {thing.data.name}
+        </a>
+        <p class="desc">{thing.data.line}</p>
+        <div class="grow"></div>
+        <div class="ledger">
+          {rows.map((r) => (
+            <div class="lrow">
+              <span class="quiet">{r.kind}</span>
+              <span class="t">{r.title}</span>
+              <span class="quiet">{r.date}</span>
+            </div>
+          ))}
+          <div class="lfoot">
+            <span class="c">{count ? `${count} post${count > 1 ? 's' : ''} · all →` : 'No posts yet'}</span>
+            {thing.data.try[0] && (
+              <a href={thing.data.try[0].url} class="ext">
+                {thing.data.try[0].label} ↗
+              </a>
+            )}
           </div>
-        ))}
-        <div class="lfoot c">
-          <span>{count ? `${count} post${count > 1 ? 's' : ''}` : 'No posts yet'}</span>
-          {count > 0 && <span>all →</span>}
         </div>
       </div>
-      <div class="grow"></div>
-      <a href={`/${thing.id}`} class="name" transition:name={`thing-${thing.id}`} aria-label={`${thing.data.name}: all posts`}>
-        {thing.data.name}
-      </a>
-      <p class="desc">{thing.data.line}</p>
-      <div class="linkrow">
-        {thing.data.try[0] && (
-          <a href={thing.data.try[0].url} class="ext">
-            {thing.data.try[0].label} ↗
-          </a>
-        )}
+      <div class="stack" aria-hidden="true">
+        {Array.from({ length: edges }).map((_, i) => <div class="edge" style={`margin: 0 ${(i + 1) * 3}px`} />)}
       </div>
     </article>
   )
@@ -131,22 +136,27 @@ const aria = post ? `${titleOf(post, 80)}, ${formatShort(post.data.date)}` : '';
   .c, .label-row a.who { color: var(--pc); }
   .quiet { color: var(--quiet); }
 
-  /* the project card */
-  .project { border-bottom-color: var(--line-strong); }
-  .ledger { display: flex; flex-direction: column; margin-top: 14px; border-top: 1px solid var(--ink); }
-  .lrow {
-    display: grid;
-    grid-template-columns: 64px minmax(0, 1fr) auto;
-    gap: 10px;
-    padding: 7px 0;
-    border-bottom: 1px solid var(--line);
-    font-size: 13px;
-    line-height: 16px;
+  /* the project card: a framed stack (hand-over 18c / 14b) */
+  .project { padding: 14px 14px 0; }
+  .frame {
+    height: 320px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    border: 1px solid var(--ink);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
   }
-  .lrow .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .lfoot { display: flex; justify-content: space-between; padding: 7px 0; font-size: 13px; line-height: 16px; }
-  .grow { flex: 1 1 auto; }
+  .project.none .frame { border-style: dashed; }
+  .tabrow { display: flex; justify-content: space-between; font-size: 13px; }
+  .project.tab .tabrow {
+    background: color-mix(in srgb, var(--pc) 8%, var(--bg));
+    margin: -12px -14px 0;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--line);
+  }
   .name {
+    margin-top: 14px;
     font-size: 56px;
     font-weight: 600;
     letter-spacing: -0.045em;
@@ -156,10 +166,26 @@ const aria = post ? `${titleOf(post, 80)}, ${formatShort(post.data.date)}` : '';
   }
   .name::after { content: ''; position: absolute; inset: 0; }
   .project:hover .name { color: var(--ink-2); }
-  .desc { margin: 14px 0 0; font-size: 15px; line-height: 1.4; color: var(--ink-2); max-width: 270px; min-height: 42px; }
-  .linkrow { height: 30px; display: flex; align-items: flex-end; }
-  .ext { position: relative; z-index: 1; font-size: 15px; color: var(--ink); }
+  .desc { margin: 10px 0 0; font-size: 15px; line-height: 1.4; color: var(--ink-2); max-width: 290px; min-height: 42px; }
+  .grow { flex: 1 1 auto; }
+  .ledger { display: flex; flex-direction: column; border-top: 1px solid var(--ink); }
+  .lrow {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+    line-height: 16px;
+    min-height: 31px; /* an empty row is as tall as a full one, so ledgers line up */
+    box-sizing: border-box;
+  }
+  .lrow .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lfoot { display: flex; justify-content: space-between; padding: 7px 0 0; font-size: 13px; line-height: 16px; }
+  .ext { position: relative; z-index: 1; color: var(--ink); }
   .ext:hover { color: var(--ink-2); }
+  .stack { height: 32px; flex-shrink: 0; overflow: hidden; display: flex; flex-direction: column; }
+  .edge { height: 3px; flex-shrink: 0; box-sizing: border-box; border: 1px solid var(--ink); border-top: none; }
 
   /* a post */
   .post { gap: 12px; }

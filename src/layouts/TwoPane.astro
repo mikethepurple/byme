@@ -26,7 +26,7 @@ const shortHead = Astro.props.shortHead ?? false;
 ---
 
 <Base title={title} description={description} image={image} type={type}>
-  <div class:list={['shell', 'proj', { headed: hasHead, striped: !!hue }]} style={hueStyle(hue)}>
+  <div class:list={['shell', 'proj', { headed: hasHead }]} style={hueStyle(hue)}>
     <header class="bar">
       <a href="/" class="brand"><span class="dot"></span>by.erikov.me</a>
       <a href="/about" class="about">about</a>

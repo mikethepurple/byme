@@ -42,6 +42,8 @@ const about = defineCollection({
       bio: z.string().default(''),
       email: z.string().default(''),
       portrait: image().optional(),
+      now: z.string().default(''),
+      elsewhere: z.array(z.object({ label: z.string(), url: z.string() })).default([]),
     }),
 });
 

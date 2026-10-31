@@ -114,3 +114,10 @@ describe('padTo — the last row filled out', () => {
     expect(padTo(1, 2)).toBe(1);
   });
 });
+
+describe('stackEdges — a project card shows one edge per post, slowly, never solid', () => {
+  it('follows the hand-over table', async () => {
+    const { stackEdges } = await import('./related');
+    expect([0, 1, 2, 3, 5, 14, 50, 500].map(stackEdges)).toEqual([0, 1, 3, 4, 5, 7, 10, 10]);
+  });
+});

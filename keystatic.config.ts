@@ -95,6 +95,11 @@ export default config({
         bio: fields.text({ label: 'Bio', multiline: true }),
         email: fields.text({ label: 'Contact email' }),
         portrait: fields.image({ label: 'Portrait', directory: 'src/assets/about', publicPath: '/src/assets/about/' }),
+        now: fields.text({ label: 'Now', multiline: true }),
+        elsewhere: fields.array(
+          fields.object({ label: fields.text({ label: 'Label' }), url: fields.url({ label: 'URL' }) }),
+          { label: 'Elsewhere', itemLabel: (p) => p.fields.label.value },
+        ),
       },
     }),
   },

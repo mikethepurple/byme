@@ -96,3 +96,8 @@ export function kindsPresent(posts: Like[]): string[] {
 export function padTo(count: number, n: number): number {
   return count % n === 0 ? 0 : n - (count % n);
 }
+
+/** Edges under a project frame: none without posts, then 1 + log2(n)·1.6, at most 10. */
+export function stackEdges(n: number): number {
+  return n <= 0 ? 0 : Math.min(10, Math.round(1 + Math.log2(n) * 1.6));
+}

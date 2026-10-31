@@ -9,7 +9,7 @@ import Grid from '../components/Grid.astro';
 import Head from '../components/Head.astro';
 import More from '../components/More.astro';
 import PostView from '../components/Post.astro';
-import { KIND_LABEL, MISC, dateRange, excerpt, projectOf, readMinutes, titleOf } from '../lib/related';
+import { KIND_LABEL, MISC, dateRange, excerpt, projectOf, readMinutes, titleOf, stackEdges } from '../lib/related';
 import { formatDate } from '../lib/posts';
 import {
   loadPosts,
@@ -160,6 +160,9 @@ const offset = post?.data.date.match(/(Z|[+-]\d\d:?\d\d)$/)?.[1];
         description={description}
         link={thingTry ? { label: thingTry.label, url: thingTry.url } : undefined}
         transitionName={headThing === MISC ? undefined : `thing-${headThing}`}
+        frame={headThing === MISC ? undefined : theirs.length ? 'solid' : 'dashed'}
+        edges={stackEdges(theirs.length)}
+        hue={hueOf(headThing)}
       />
     )
   }
