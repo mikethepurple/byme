@@ -254,3 +254,24 @@ describe('a Shortcut form — text fields sent as file parts still count', () =>
     expect(inc.photos).toHaveLength(1);
   });
 });
+
+describe('htmlToMarkdown — iA Writer may publish HTML instead of Markdown', () => {
+  it('paragraphs, headings, links, emphasis, pictures, entities', async () => {
+    const { htmlToMarkdown } = await import('./micropub');
+    expect(htmlToMarkdown('<p>Тест</p>')).toBe('Тест');
+    expect(htmlToMarkdown('<h1>This is an app</h1>\n\n<p>Thst ill launch</p>')).toBe('# This is an app\n\nThst ill launch');
+    expect(htmlToMarkdown('<p>A <a href="https://x.y">link</a> and <em>this</em> &amp; <strong>that</strong></p><p>Two<br>lines</p>')).toBe('A [link](https://x.y) and *this* & **that**\n\nTwo\nlines');
+    expect(htmlToMarkdown('<p><img src="https://r/1.png" alt="a"></p>')).toBe('![a](https://r/1.png)');
+    expect(htmlToMarkdown('<ul><li>one</li><li>two</li></ul>')).toBe('- one\n- two');
+  });
+  it('leaves Markdown alone', async () => {
+    const { htmlToMarkdown } = await import('./micropub');
+    expect(htmlToMarkdown('Plain *text* with <3')).toBe('Plain *text* with <3');
+  });
+  it('a JSON post in HTML gets its h1 as the title and Markdown as the body', async () => {
+    const req = new Request('https://x/micropub', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ type: ['h-entry'], properties: { content: [{ html: '<h1>This is an app</h1><p>It will launch</p>' }] } }) });
+    const inc = await parseMicropubRequest(req);
+    expect(inc.name).toBe('This is an app');
+    expect(inc.content).toBe('It will launch');
+  });
+});

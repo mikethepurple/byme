@@ -48,7 +48,7 @@ function texts(v: unknown): string[] {
 
 /** iA Writer puts the title as the first `# heading`; it becomes the title, not body text. */
 function splitTitle(raw: string, name: string): { name: string; content: string } {
-  const content = raw.replace(/\r\n/g, '\n');
+  const content = htmlToMarkdown(raw.replace(/\r\n/g, '\n'));
   const m = content.match(/^\s*#+ (.+)/);
   if (m) return { name: m[1].trim(), content: content.replace(/^\s*#+ .+\n*/, '').trim() };
   return { name: name.trim(), content: content.trim() };
@@ -296,4 +296,38 @@ export function liftImages(content: string, name: string): { content: string; na
     name: FILE_TITLE.test(name.trim()) ? '' : name,
     urls,
   };
+}
+
+const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+const decode = (s: string) =>
+  s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e: string) =>
+    e[0] === '#' ? String.fromCodePoint(e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10)) : (ENTITIES[e.toLowerCase()] ?? m),
+  );
+
+/**
+ * iA Writer can publish HTML instead of Markdown (a per-account setting). The
+ * site stores Markdown, so HTML is turned back into it: paragraphs, headings,
+ * line breaks, links, emphasis, pictures, lists, quotes. Text without block
+ * tags is left alone.
+ */
+export function htmlToMarkdown(input: string): string {
+  if (!/<\/?(p|h[1-6]|div|br|ul|ol|li|blockquote|img|a|em|strong|figure)\b/i.test(input)) return input;
+  let s = input;
+  s = s.replace(/<img\b[^>]*>/gi, (tag) => {
+    const src = tag.match(/\bsrc=["']([^"']+)["']/i)?.[1] ?? '';
+    const alt = tag.match(/\balt=["']([^"']*)["']/i)?.[1] ?? '';
+    return src ? `![${alt}](${src})` : '';
+  });
+  s = s.replace(/<a\b[^>]*?href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, (_m, href, t) => `[${t}](${href})`);
+  s = s.replace(/<(strong|b)>([\s\S]*?)<\/\1>/gi, '**$2**').replace(/<(em|i)>([\s\S]*?)<\/\1>/gi, '*$2*');
+  s = s.replace(/<code>([\s\S]*?)<\/code>/gi, '`$1`');
+  s = s.replace(/<h([1-6])[^>]*>([\s\S]*?)<\/h\1>/gi, (_m, n, t) => `\n\n${'#'.repeat(+n)} ${t.trim()}\n\n`);
+  s = s.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (_m, t) => `\n- ${t.trim()}`);
+  s = s.replace(/<\/?(ul|ol)[^>]*>/gi, '\n\n');
+  s = s.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (_m, t) => `\n\n> ${t.replace(/<\/?p[^>]*>/gi, '').trim()}\n\n`);
+  s = s.replace(/<br\s*\/?>/gi, '\n');
+  s = s.replace(/<\/(p|div|figure)>/gi, '\n\n').replace(/<(p|div|figure)[^>]*>/gi, '');
+  s = s.replace(/<[^>]+>/g, '');
+  s = decode(s);
+  return s.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
 }
