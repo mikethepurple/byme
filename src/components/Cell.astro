@@ -132,7 +132,7 @@ const aria = post ? `${titleOf(post, 80)}, ${formatShort(post.data.date)}` : '';
   }
   .label-row { font-size: 13px; }
   .label-row a { color: inherit; text-decoration: none; position: relative; z-index: 1; }
-  .label-row a:hover { color: var(--ink-2); }
+  .label-row a:hover { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
   .c, .label-row a.who { color: var(--pc); }
   .quiet { color: var(--quiet); }
 
@@ -165,7 +165,11 @@ const aria = post ? `${titleOf(post, 80)}, ${formatShort(post.data.date)}` : '';
     text-decoration: none;
   }
   .name::after { content: ''; position: absolute; inset: 0; }
-  .project:hover .name { color: var(--ink-2); }
+  /* hover: the headline's underline turns on; nothing else changes */
+  .cell { cursor: pointer; }
+  .name, .title { text-decoration: underline; text-decoration-color: transparent; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+  .name { text-underline-offset: 8px; }
+  .cell:hover .name, .cell:hover .title { text-decoration-color: currentColor; }
   .desc { margin: 10px 0 0; font-size: 15px; line-height: 1.4; color: var(--ink-2); max-width: 290px; min-height: 42px; }
   .grow { flex: 1 1 auto; }
   .ledger { display: flex; flex-direction: column; border-top: 1px solid var(--frame); }
@@ -183,7 +187,7 @@ const aria = post ? `${titleOf(post, 80)}, ${formatShort(post.data.date)}` : '';
   .lrow .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .lfoot { display: flex; justify-content: space-between; padding: 7px 0 0; font-size: 13px; line-height: 16px; }
   .ext { position: relative; z-index: 1; color: var(--ink); }
-  .ext:hover { color: var(--ink-2); }
+
   .stack { height: 32px; flex-shrink: 0; overflow: hidden; display: flex; flex-direction: column; }
   .edge { height: 3px; flex-shrink: 0; box-sizing: border-box; border: 1px solid var(--edge); border-top: none; }
 

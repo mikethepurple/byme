@@ -104,7 +104,7 @@ a {
   text-decoration-thickness: 1px;
 }
 
-a:hover { color: var(--ink-2); }
+a { text-decoration-thickness: 1px; }
 
 /* --- Blocks of text --- */
 

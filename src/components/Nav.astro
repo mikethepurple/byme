@@ -112,7 +112,7 @@ const projects = [...things.map((t) => ({ id: t.id, name: t.data.name })), { id:
   .k { font-size: 13px; color: var(--quiet); }
   .items { display: flex; flex-wrap: wrap; gap: 8px 18px; }
   .items a { color: var(--ink); text-decoration: none; text-underline-offset: 4px; }
-  .items a:hover { color: var(--ink-2); }
+  .items a:hover { text-decoration: underline; text-decoration-thickness: 1px; }
   .items a.on { text-decoration: underline; }
   .items a.proj { color: var(--pc); }
 
@@ -120,7 +120,7 @@ const projects = [...things.map((t) => ({ id: t.id, name: t.data.name })), { id:
   .foot a, .theme-toggle { color: var(--ink-2); text-decoration: none; }
   /* about is a link like rss and dark; underlined only when it is the page you are on */
   .foot .about.on { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
-  .foot a:hover, .theme-toggle:hover { color: var(--ink-2); }
+  .foot a:hover, .theme-toggle:hover { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
   .theme-toggle { font: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 
   /* the sheet on narrow screens: 44px tap targets */
