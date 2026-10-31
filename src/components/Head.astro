@@ -19,11 +19,13 @@ interface Props {
 }
 
 const { left, right, title, size = 'page', description, link, transitionName, frame, edges = 0, hue } = Astro.props;
-const tab = !!frame && import.meta.env.PUBLIC_DESIGN !== 'b';
+const design = import.meta.env.PUBLIC_DESIGN ?? 'a';
+const tab = !!frame && design === 'a';
+const line = !!frame && design === 'c'; // B with the line under the top row in the project colour
 ---
 
 <div class:list={['wrap', { framed: !!frame, dashed: frame === 'dashed' }]}>
-<div class:list={['frame', 'hued', { tab }]} style={hueStyle(hue)}>
+<div class:list={['frame', 'hued', { tab, line }]} style={hueStyle(hue)}>
 <div class="top">
   <div class="items">
     {
@@ -71,6 +73,7 @@ const tab = !!frame && import.meta.env.PUBLIC_DESIGN !== 'b';
   .frame.tab .top { background: color-mix(in srgb, var(--pc) 8%, var(--bg)); }
   /* in a project frame the top row is thin, as on the cards */
   .wrap.framed .top { padding: 9px 14px; line-height: 16px; }
+  .frame.line .top { border-bottom-color: var(--pc); }
   .stack { height: 32px; flex-shrink: 0; overflow: hidden; display: flex; flex-direction: column; }
   .edge { height: 3px; flex-shrink: 0; box-sizing: border-box; border: 1px solid var(--ink); border-top: none; }
   @media (max-width: 699px) {
