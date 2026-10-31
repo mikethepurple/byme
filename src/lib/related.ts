@@ -99,5 +99,6 @@ export function padTo(count: number, n: number): number {
 
 /** Edges under a project frame: none without posts, then 1 + log2(n)·1.6, at most 10. */
 export function stackEdges(n: number): number {
-  return n <= 0 ? 0 : Math.min(10, Math.round(1 + Math.log2(n) * 1.6));
+  // one edge per post, at most 10 (Misha 31.10: the edges read as the post count)
+  return Math.max(0, Math.min(10, n));
 }
