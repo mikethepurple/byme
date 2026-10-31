@@ -33,7 +33,7 @@ const ogImage = new URL(image ?? '/og.png', Astro.site ?? Astro.url).href;
     // chooses; the choice is remembered in this browser and re-applied after
     // every in-place navigation.
     (function () {
-      var KEY = 'theme';
+      var KEY = 'theme-2'; // renamed 31.10: older stored choices (dark) are forgotten, light is the default again
       // ?theme= is read once, then dropped from the address so the toggle wins afterwards.
       try {
         var q = new URLSearchParams(location.search).get('theme');
