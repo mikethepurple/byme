@@ -1,7 +1,10 @@
 ---
 // About, per the hand-over v2 (§7): the project page template with the strip
-// in the dot's colour; a head with the name, a short bio and a link; then a
-// grid of blocks — the projects. The bio is one line until Misha writes it.
+// in the dot's colour; a head with the name, the bio and the contact address;
+// then a grid of blocks — the portrait, then the projects. Everything on this
+// page is edited in Keystatic → About.
+import { getEntry } from 'astro:content';
+import { Image } from 'astro:assets';
 import TwoPane from '../layouts/TwoPane.astro';
 import Nav from '../components/Nav.astro';
 import Head from '../components/Head.astro';
@@ -11,6 +14,7 @@ import { loadPosts, loadThings, thingNames, thingHues } from '../lib/load';
 
 export const prerender = true;
 
+const about = (await getEntry('about', 'about'))!.data;
 const things = await loadThings();
 const posts = await loadPosts();
 const names = thingNames(things);
@@ -18,13 +22,33 @@ const hues = thingHues(things);
 const byThing = new Map(things.map((t) => [t.id, posts.filter((p) => projectOf(p) === t.id)]));
 ---
 
-<TwoPane title="About" hue={{ c: '#f0a020', cd: '#f0a020' }}>
+<TwoPane title="About" description={about.bio} image={about.portrait?.src} hue={{ c: '#f0a020', cd: '#f0a020' }}>
   <Head
     slot="head"
     left={[{ text: 'About' }]}
-    title="Misha Erikov"
-    description="Things I make, dropped here as they happen."
+    title={about.name}
+    description={about.bio}
+    link={about.email ? { label: about.email, url: `mailto:${about.email}` } : undefined}
   />
-  <Grid slot="content" things={things} byThing={byThing} posts={[]} names={names} hues={hues} />
+  <Grid slot="content" things={things} byThing={byThing} posts={[]} names={names} hues={hues}>
+    {
+      about.portrait && (
+        <div class="portrait">
+          <Image src={about.portrait} alt={about.name} widths={[480, 960]} sizes="(max-width: 699px) 100vw, (max-width: 1199px) 50vw, 30vw" />
+        </div>
+      )
+    }
+  </Grid>
   <Nav slot="side" things={things} posts={posts} hues={hues} where="about" />
 </TwoPane>
+
+<style>
+  .portrait {
+    height: var(--cell);
+    box-sizing: border-box;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    padding: 18px 20px;
+  }
+  .portrait :global(img) { width: 100%; height: 100%; object-fit: cover; display: block; }
+</style>

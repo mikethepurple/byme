@@ -18,12 +18,14 @@ interface Props {
 }
 
 const { things = [], byThing = new Map(), posts, names, hues = new Map(), showProject = true, message = 'Nothing here yet.' } = Astro.props;
-const count = things.length + posts.length;
+const lead = Astro.slots.has('default') ? 1 : 0; // a block put before the cells, e.g. the portrait
+const count = lead + things.length + posts.length;
 const for3 = count === 0 ? 2 : padTo(count, 3);
 const for2 = count === 0 ? 1 : padTo(count, 2);
 ---
 
 <div class="grid">
+  <slot />
   {things.map((thing, i) => <Cell thing={thing} index={i + 1} theirs={byThing.get(thing.id) ?? []} />)}
   {posts.map((post) => <Cell post={post} names={names} hues={hues} showProject={showProject} />)}
   {count === 0 && <div class="msg quiet">{message}</div>}
