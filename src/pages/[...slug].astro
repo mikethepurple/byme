@@ -37,7 +37,7 @@ export async function getStaticPaths() {
   const things = await loadThings();
   const posts = await loadPosts();
   const paths: { params: { slug: string }; props: Props }[] = [];
-  const reserved = new Set<string>([...LANES, 'everything', 'page', 'about', MISC, 'rss.xml', 'micropub', 'auth', 'keystatic', 'tag', 'drop']);
+  const reserved = new Set<string>([...LANES, 'everything', 'page', 'about', MISC, 'rss.xml', 'micropub', 'auth', 'keystatic', 'tag', 'drop', 'edit']);
 
   paths.push({ params: { slug: 'everything' }, props: { type: 'browse' } });
   // Every combination of project × when × kind has an address:

@@ -1,0 +1,84 @@
+---
+// /edit — every post as one readable row, newest first: thumbnail, kind ·
+// project, tags, headline and first words, date. A row opens the post in
+// Keystatic; «view» opens it on the site. Keystatic's own list shows only
+// slug, title and date, and most posts have no title.
+import { Image } from 'astro:assets';
+import { loadPosts, loadThings, thingNames, thingHues, hueStyle, MISC_HUE } from '../lib/load';
+import { editRow } from '../lib/edit';
+import { MISC, projectOf } from '../lib/related';
+
+export const prerender = true;
+
+const posts = await loadPosts();
+const things = await loadThings();
+const names = thingNames(things);
+const hues = thingHues(things);
+const rows = posts.map((p) => ({ p, r: editRow({ ...p, tags: p.data.tags }, names), hue: projectOf(p) === MISC ? MISC_HUE : hues.get(projectOf(p)) }));
+---
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <title>All posts — by.erikov.me</title>
+</head>
+<body>
+  <main>
+    <header>
+      <a href="/" class="brand"><span class="dot"></span>by.erikov.me</a>
+      <span class="quiet">{posts.length} posts · <a href="/drop">drop</a> · <a href="/keystatic/branch/main/collection/posts">Keystatic</a></span>
+    </header>
+    <ol>
+      {rows.map(({ p, r, hue }) => (
+        <li>
+          <a class="row" href={r.edit}>
+            <span class="thumb">{p.data.images[0] && <Image src={p.data.images[0]} alt="" widths={[128]} sizes="64px" loading="lazy" />}</span>
+            <span class="what">
+              <span class="label">{r.kind} · <span class="proj" style={hueStyle(hue)}>{r.project}</span>{r.tags && <span class="quiet"> {r.tags}</span>}</span>
+              <span class="headline">{r.headline}</span>
+              {r.excerpt && <span class="excerpt">{r.excerpt}</span>}
+            </span>
+            <span class="when quiet">{r.when}</span>
+          </a>
+          <a class="view" href={r.view}>view</a>
+        </li>
+      ))}
+    </ol>
+  </main>
+
+  <style is:global>
+    @import '../styles/global.css';
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); }
+    main { max-width: 1000px; margin: 0 auto; padding: 16px 20px 60px; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 6px 0 18px; border-bottom: 1px solid var(--line); font-size: 18px; }
+    header a { color: inherit; }
+    .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+    .quiet { color: var(--quiet); font-size: 13px; }
+    ol { list-style: none; margin: 0; padding: 0; }
+    li { position: relative; border-bottom: 1px solid var(--line); }
+    .row { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 16px; align-items: start; padding: 14px 64px 14px 0; color: var(--ink); text-decoration: none; }
+    .row:hover .headline { text-decoration: underline; text-underline-offset: 3px; }
+    .thumb { width: 64px; height: 64px; background: var(--line); overflow: hidden; }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .what { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .label { font-size: 13px; }
+    .proj { color: var(--c, var(--ink)); }
+    [data-theme='dark'] .proj { color: var(--cd, var(--ink)); }
+    .headline { font-size: 17px; font-weight: 500; }
+    .excerpt { font-size: 15px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .when { white-space: nowrap; }
+    .view { position: absolute; right: 0; bottom: 14px; font-size: 13px; color: var(--ink-2); }
+    @media (max-width: 600px) {
+      .row { grid-template-columns: 56px minmax(0, 1fr); padding-right: 0; }
+      .thumb { width: 56px; height: 56px; }
+      .when { grid-column: 2; }
+      .view { bottom: 14px; }
+    }
+  </style>
+</body>
+</html>
