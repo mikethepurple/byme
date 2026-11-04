@@ -6,29 +6,34 @@
 // underlined; on a project or post page the active project is in its colour.
 // A post page adds its "More in {project}" block after, through the slot.
 import { MISC, kindsPresent } from '../lib/related';
+import { tagsPresent } from '../lib/tags';
 import { MISC_HUE, hueStyle, type Hue, type Post, type Thing, type Scope } from '../lib/load';
 
 interface Props {
   things: Thing[];
   posts: Post[]; // all posts, for the When row
   scoped?: Post[]; // the posts in the scope in force, for the kind row
+  tagged?: Post[]; // the posts of the project in force, for the tag row
   scope?: Scope; // what is in force
   hues?: Map<string, Hue>;
   where?: 'front' | 'browse' | 'post' | 'about';
 }
 
-const { things, posts, scoped = posts, scope = {}, hues = new Map(), where = 'browse' } = Astro.props;
+const { things, posts, scoped = posts, tagged = posts, scope = {}, hues = new Map(), where = 'browse' } = Astro.props;
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const months = Array.from(new Set(posts.map((p) => p.data.date.slice(0, 7)))).sort().reverse();
 const years = Array.from(new Set(months.map((m) => m.slice(0, 4))));
 
 const marks = where === 'browse' || where === 'post' || where === 'front';
-const { thing, lane, month } = scope;
+const { thing, lane, month, tag } = scope;
 // An address is /<project>/<month>/<kind>, each part optional; none at all is the front.
 const at = (t?: string, m?: string, l?: string) => `${t ? `/${t}` : ''}${m ? `/${m}` : ''}${l ? `/${l}` : ''}` || '/';
 const hueOf = (id: string) => (id === MISC ? MISC_HUE : hues.get(id));
 const kinds = kindsPresent(scoped);
+const tags = tagsPresent(tagged);
+// a tag page narrows everything or one project, so the project row keeps the tag
+const atProject = (t?: string) => (tag ? `${t ? `/${t}` : ''}/tag/${tag}` : at(t, month, lane));
 const projects = [...things.map((t) => ({ id: t.id, name: t.data.name })), { id: MISC, name: 'misc' }];
 ---
 
@@ -40,12 +45,12 @@ const projects = [...things.map((t) => ({ id: t.id, name: t.data.name })), { id:
   <div class="row">
     <span class="k">project</span>
     <span class="items">
-      <a href={at(undefined, month, lane)} class:list={[{ on: marks && !thing }]}>all</a>
+      <a href={atProject(undefined)} class:list={[{ on: marks && !thing }]}>all</a>
       {
         projects.map((p) => {
           const on = marks && thing === p.id;
           return (
-            <a href={at(p.id, month, lane)} class:list={[{ on, proj: on && !!hueOf(p.id) }]} style={on ? hueStyle(hueOf(p.id)) : undefined}>
+            <a href={atProject(p.id)} class:list={[{ on, proj: on && !!hueOf(p.id) }]} style={on ? hueStyle(hueOf(p.id)) : undefined}>
               {p.name}
             </a>
           );
@@ -78,6 +83,17 @@ const projects = [...things.map((t) => ({ id: t.id, name: t.data.name })), { id:
       }
     </span>
   </div>
+  {
+    tags.length > 0 && (
+      <div class="row">
+        <span class="k">tag</span>
+        <span class="items">
+          <a href={at(thing, month, lane)} class:list={[{ on: marks && !tag }]}>all</a>
+          {tags.map((t) => <a href={`${thing ? `/${thing}` : ''}/tag/${t}`} class:list={[{ on: marks && tag === t }]}>#{t}</a>)}
+        </span>
+      </div>
+    )
+  }
   <div class="foot">
     <a href="/about" class:list={["about", { on: where === "about" }]}>about</a>
     <a href="/rss.xml">rss</a>

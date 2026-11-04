@@ -67,6 +67,11 @@ export default config({
           fields.relationship({ label: 'Thing', collection: 'things' }),
           { label: 'Things', itemLabel: (p) => p.value ?? '' },
         ),
+        // free tags (lower case, no #): the #words on a post's last line that are not a project
+        tags: fields.array(fields.text({ label: 'Tag' }), {
+          label: 'Tags',
+          itemLabel: (p) => p.value,
+        }),
         // Image files are written by the publish endpoint under
         // src/assets/posts/<slug>/; this field only lists their paths.
         images: fields.array(fields.text({ label: 'Image path' }), {

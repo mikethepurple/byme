@@ -1,5 +1,6 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import { kindOf, parseDate, laneOf, plain, type Kind } from './posts';
+import { withTag } from './tags';
 
 // `things` (ids), `date`, `title` and `plain` are lifted out so a Post satisfies
 // the `Like` shape the pure helpers in related.ts work on.
@@ -67,6 +68,7 @@ export interface Scope {
   thing?: string;
   lane?: Lane;
   month?: string; // YYYY-MM
+  tag?: string; // a free tag, without #
 }
 
 /** The feed narrowed to what the index has in force. */
@@ -75,6 +77,7 @@ export function scopePosts(posts: Post[], s: Scope): Post[] {
   if (s.thing) out = postsOf(out, s.thing);
   if (s.lane) out = postsIn(out, s.lane);
   if (s.month) out = out.filter((p) => p.data.date.startsWith(s.month!));
+  if (s.tag) out = withTag(out, s.tag);
   return out;
 }
 
@@ -96,6 +99,7 @@ export function scopeLabel(s: Scope, names: Map<string, string>): string {
   if (s.thing) parts.push(names.get(s.thing) ?? s.thing);
   if (s.lane) parts.push(s.lane);
   if (s.month) parts.push(monthLabel(s.month));
+  if (s.tag) parts.push(`#${s.tag}`);
   return parts.length ? parts.join(' · ') : 'everything';
 }
 

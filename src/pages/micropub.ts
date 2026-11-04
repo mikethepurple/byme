@@ -2,6 +2,7 @@
 // form-urlencoded, or multipart with photo files (an iOS Shortcut). Nothing is
 // required but the content; the date, slug and kind are worked out here.
 
+import { splitCategories } from '../lib/tags';
 import type { APIRoute } from 'astro';
 import {
   parseMicropubRequest,
@@ -98,13 +99,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
       throw new MicropubError(400, 'Nothing to post');
     }
 
-    const wanted = inc.categories.map((c) => c.trim().toLowerCase());
-    const things = THINGS.filter((t) => wanted.includes(t));
+    // project names become the post's projects; every other tag is kept as a tag
+    const { things, tags } = splitCategories(inc.categories, THINGS);
 
     const gh = { token: env.githubToken, repo: REPO, branch: env.branch };
     const date = storedDateFor(inc, new Date(), env.requestZone);
     const slug = slugFor(date, await listPostSlugs(gh));
-    const { files } = buildPost({ slug, date, name: inc.name, content: inc.content, things, link: inc.link, photos });
+    const { files } = buildPost({ slug, date, name: inc.name, content: inc.content, things, tags, link: inc.link, photos });
     await commitFiles(gh, files, `Post ${slug}${inc.received ? `\n\nReceived: ${inc.received}` : ''}`);
 
     const postUrl = `${new URL(request.url).origin}/${slug}`;

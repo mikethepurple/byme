@@ -27,6 +27,8 @@ const posts = defineCollection({
       date: z.string(),
       title: z.string().optional(),
       things: z.array(reference('things')).default([]),
+      // free tags: the #words on the last line that are not a project
+      tags: z.array(z.coerce.string()).default([]),
       images: z.array(image()).default([]),
       link: z.string().url().optional().or(z.literal('')),
       draft: z.boolean().default(false),

@@ -11,6 +11,7 @@ import More from '../components/More.astro';
 import PostView from '../components/Post.astro';
 import { KIND_LABEL, MISC, dateRange, excerpt, projectOf, readMinutes, titleOf, stackEdges } from '../lib/related';
 import { formatDate } from '../lib/posts';
+import { tagsPresent } from '../lib/tags';
 import {
   loadPosts,
   loadThings,
@@ -36,7 +37,7 @@ export async function getStaticPaths() {
   const things = await loadThings();
   const posts = await loadPosts();
   const paths: { params: { slug: string }; props: Props }[] = [];
-  const reserved = new Set<string>([...LANES, 'everything', 'page', 'about', MISC, 'rss.xml', 'micropub', 'auth', 'keystatic']);
+  const reserved = new Set<string>([...LANES, 'everything', 'page', 'about', MISC, 'rss.xml', 'micropub', 'auth', 'keystatic', 'tag']);
 
   paths.push({ params: { slug: 'everything' }, props: { type: 'browse' } });
   // Every combination of project × when × kind has an address:
@@ -51,6 +52,13 @@ export async function getStaticPaths() {
         if (!slug) continue; // that is /everything
         paths.push({ params: { slug }, props: { type: 'browse', thing, month, lane } });
       }
+    }
+  }
+  // A tag narrows everything or one project: /tag/<tag>, /<project>/tag/<tag>.
+  // (Not combined with when and kind: every combination is a built page.)
+  for (const tag of tagsPresent(posts)) {
+    for (const thing of [undefined, ...things.map((t) => t.id), MISC]) {
+      paths.push({ params: { slug: [thing, 'tag', tag].filter(Boolean).join('/') }, props: { type: 'browse', thing, tag } });
     }
   }
   for (let n = 2; (n - 1) * PAGE_SIZE < posts.length; n++) {
@@ -87,6 +95,7 @@ let image: string | undefined;
 let scope: Scope = {};
 let scoped: Post[] = posts;
 let forKinds: Post[] = posts; // the kind row ignores its own filter: project and time only
+let forTags: Post[] = posts; // the tag row: the tags of the project in force
 let feed: Post[] = [];
 let older: string | undefined;
 let newer: string | undefined;
@@ -94,11 +103,12 @@ let hue: Hue | undefined;
 let filterLabel = 'filter';
 
 if (props.type === 'browse') {
-  scope = { thing: props.thing, lane: props.lane, month: props.month };
+  scope = { thing: props.thing, lane: props.lane, month: props.month, tag: props.tag };
   title = scopeLabel(scope, names).replace(MISC, 'Misc');
   const inProject = props.thing === MISC ? ofProject(MISC) : posts;
   const without = props.thing === MISC ? {} : { thing: props.thing };
-  forKinds = scopePosts(inProject, { ...without, month: props.month });
+  forKinds = scopePosts(inProject, { ...without, month: props.month, tag: props.tag });
+  forTags = scopePosts(inProject, without);
   scoped = scopePosts(forKinds, { lane: props.lane });
   if (props.page) {
     const n = props.page;
@@ -116,7 +126,7 @@ if (props.type === 'browse') {
     const t = things.find((x) => x.id === props.thing);
     description = props.thing === MISC ? "Posts that don't belong to a project." : t?.data.line || undefined;
     image = t?.data.cover?.src;
-  } else if (props.lane || props.month) {
+  } else if (props.lane || props.month || props.tag) {
     filterLabel = `filter: ${title}`;
   }
 } else {
@@ -139,9 +149,11 @@ const thingTry = headThing && headThing !== MISC ? things.find((t) => t.id === h
 const post = props.type === 'read' ? props.post : undefined;
 const postProj = post ? projectOf(post) : '';
 const postMore = post ? ofProject(postProj).filter((x) => x.id !== post.id) : [];
-// An untitled post whose whole text is one short line: that line is its title, and nothing repeats below.
-const postLead = post && !post.title && post.plain && !post.plain.includes('\n') && post.plain.length <= 140 ? post.plain : '';
-const postTitle = post ? postLead || post.title || (post.plain ? titleOf(post, 80) : undefined) : undefined;
+// An untitled text post whose whole text is one short line: that line is its title, and nothing repeats below.
+// A picture post's text is its caption, under the picture, never a headline.
+const visualPost = !!post && post.data.images.length > 0;
+const postLead = post && !visualPost && !post.title && post.plain && !post.plain.includes('\n') && post.plain.length <= 140 ? post.plain : '';
+const postTitle = post ? postLead || post.title || (post.plain && !visualPost ? titleOf(post, 80) : undefined) : undefined;
 const offset = post?.data.date.match(/(Z|[+-]\d\d:?\d\d)$/)?.[1];
 ---
 
@@ -173,6 +185,7 @@ const offset = post?.data.date.match(/(Z|[+-]\d\d:?\d\d)$/)?.[1];
         left={[
           { text: KIND_LABEL[post.kind] },
           { text: nameOf(postProj), href: `/${postProj}`, hue: hueOf(postProj) },
+          ...post.data.tags.map((t) => ({ text: `#${t}`, href: `/tag/${t}`, quiet: true })),
           ...(post.kind === 'longread' ? [{ text: `${readMinutes(post.plain)} min read`, quiet: true }] : []),
         ]}
         right={{ text: `${formatDate(post.data.date)}${offset ? ` UTC${offset === 'Z' ? '' : offset}` : ''}` }}
@@ -209,7 +222,7 @@ const offset = post?.data.date.match(/(Z|[+-]\d\d:?\d\d)$/)?.[1];
       )
     }
   </Fragment>
-  <Nav slot="side" things={things} posts={posts} scoped={props.type === 'read' ? posts : forKinds} scope={scope} hues={hues} where={props.type === 'read' ? 'post' : 'browse'}>
+  <Nav slot="side" things={things} posts={posts} scoped={props.type === 'read' ? posts : forKinds} tagged={forTags} scope={scope} hues={hues} where={props.type === 'read' ? 'post' : 'browse'}>
     {
       post && !post.data.images.length && (
         <div class="more-wide">

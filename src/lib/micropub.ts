@@ -2,6 +2,7 @@
 // encodings becomes one `Incoming`; `buildPost` turns it into the files one
 // commit will carry. Nothing here touches the network.
 
+import { inlineTags } from './tags';
 import { HOME_ZONE, instantIn, toIsoInZone } from './posts';
 
 export type Photo =
@@ -72,6 +73,7 @@ export async function parseMicropubRequest(req: Request): Promise<Incoming> {
     const jt = splitTags(inc.content);
     inc.content = jt.content;
     inc.categories.push(...jt.tags);
+    inc.categories.push(...inlineTags(inc.content));
     inc.link = text(p['bookmark-of']) || '';
     inc.photos = texts(p.photo).map((url) => ({ kind: 'url', url }));
     const li = liftImages(inc.content, inc.name);
@@ -119,6 +121,7 @@ export async function parseMicropubRequest(req: Request): Promise<Incoming> {
   const ft = splitTags(inc.content);
   inc.content = ft.content;
   inc.categories.push(...ft.tags);
+  inc.categories.push(...inlineTags(inc.content));
   inc.link = str('bookmark-of') || '';
   for (const v of all('photo')) {
     if (typeof v === 'string') {
@@ -198,6 +201,7 @@ export interface PostInput {
   name: string;
   content: string;
   things: string[];
+  tags?: string[];
   link: string;
   photos: Photo[];
 }
@@ -209,6 +213,11 @@ export interface FileEntry {
 
 function yamlString(s: string): string {
   return s ? JSON.stringify(s) : "''";
+}
+
+/** A list item YAML reads back as the same string: plain words bare, anything number- or yes/no-like quoted. */
+function yamlItem(s: string): string {
+  return /^\p{L}[\p{L}\p{N}-]*$/u.test(s) && !/^(y|n|yes|no|true|false|on|off|null)$/i.test(s) ? s : JSON.stringify(s);
 }
 
 function yamlList(key: string, items: string[]): string {
@@ -239,6 +248,7 @@ export function buildPost(input: PostInput): { files: FileEntry[] } {
     `date: '${input.date}'`,
     `title: ${yamlString(input.name)}`,
     yamlList('things', input.things),
+    yamlList('tags', (input.tags ?? []).map(yamlItem)),
     yamlList('images', images),
     `link: ${input.link ? input.link : "''"}`,
     'draft: false',

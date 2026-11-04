@@ -152,6 +152,7 @@ describe('buildPost — one .mdoc plus its image files, in the layout Keystatic 
         "title: ''",
         'things:',
         '  - detourist',
+        'tags: []',
         'images:',
         '  - /src/assets/posts/2026-11-03-0915/1.png',
         '  - /src/assets/posts/2026-11-03-0915/2.jpg',
