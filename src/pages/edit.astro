@@ -25,6 +25,8 @@ const rows = posts.map((p) => ({ p, r: editRow({ ...p, tags: p.data.tags }, name
   <meta name="robots" content="noindex" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <title>All posts — by.erikov.me</title>
+  <!-- every link on this page opens in a new tab (Misha 04.11: «only in edit») -->
+  <base target="_blank" />
 </head>
 <body>
   <main>
