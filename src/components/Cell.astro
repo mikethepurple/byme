@@ -13,7 +13,7 @@
 // the title (20/500) and an excerpt of about 300 characters.
 import { Image } from 'astro:assets';
 import { formatShort, laneOf } from '../lib/posts';
-import { KIND_LABEL, MISC, excerpt, ledger, projectOf, titleOf, stackEdges } from '../lib/related';
+import { KIND_LABEL, MISC, excerpt, leadOf, ledger, projectOf, titleOf, stackEdges } from '../lib/related';
 import { MISC_HUE, hueStyle, type Hue, type Post, type Thing } from '../lib/load';
 
 interface Props {
@@ -39,7 +39,9 @@ const imgs = post?.data.images ?? [];
 const proj = post ? projectOf(post) : '';
 const projName = proj === MISC ? 'misc' : (names.get(proj) ?? proj);
 const projHue = proj === MISC ? MISC_HUE : hues.get(proj);
-const postText = post ? excerpt(post.plain, 300) : '';
+// an untitled one-line note reads as its title (leadOf), like a titled one
+const lead = post ? leadOf(post) : { title: '', text: '' };
+const postText = excerpt(lead.text, 300);
 const aria = post ? `${titleOf(post, 80)}, ${formatShort(post.data.date)}` : '';
 ---
 
@@ -105,9 +107,9 @@ const aria = post ? `${titleOf(post, 80)}, ${formatShort(post.data.date)}` : '';
       )}
       {imgs.length === 0 && (
         <>
-          {post.title && <div class="title">{post.title}</div>}
+          {lead.title && <div class="title">{lead.title}</div>}
           {postText && <div class="text">{postText}</div>}
-          {!post.title && !postText && post.data.link && <div class="title">{post.data.link.replace(/^https?:\/\//, '')}</div>}
+          {!lead.title && !postText && post.data.link && <div class="title">{post.data.link.replace(/^https?:\/\//, '')}</div>}
         </>
       )}
       <a href={`/${post.id}`} class="open" aria-label={aria}></a>

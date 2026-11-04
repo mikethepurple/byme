@@ -121,3 +121,29 @@ describe('stackEdges — a project card shows one edge per post, slowly, never s
     expect([0, 1, 2, 3, 5, 10, 14, 500].map(stackEdges)).toEqual([0, 1, 2, 3, 5, 10, 10, 10]);
   });
 });
+
+import { leadOf } from './related';
+
+describe('titleOf — a picture with a caption is called by its caption', () => {
+  it('uses the first line of the caption, not "Photo"', () => {
+    expect(titleOf(post('c', '2026-11-04T13:26:00+01:00', ['experiments'], 'photo', '', 'Built this for myself today #sncf'))).toBe('Built this for myself today #sncf');
+    expect(titleOf(post('d', '2026-11-04T13:26:00+01:00', [], 'set', '', 'Two from the walk', 3))).toBe('Two from the walk');
+  });
+});
+
+describe('leadOf — an untitled text post of one short line reads as its title', () => {
+  it('one short line → the title, nothing under it', () => {
+    expect(leadOf(post('n', '2026-11-04T13:33:00+01:00', [], 'note', '', 'Test'))).toEqual({ title: 'Test', text: '' });
+  });
+  it('a title stays the title, the text stays text', () => {
+    expect(leadOf(post('n', '2026-11-04T13:33:00+01:00', [], 'note', 'Named', 'Body'))).toEqual({ title: 'Named', text: 'Body' });
+  });
+  it('several lines or a long line stay text', () => {
+    expect(leadOf(post('n', '2026-11-04T13:33:00+01:00', [], 'note', '', 'One\n\nTwo'))).toEqual({ title: '', text: 'One\n\nTwo' });
+    const long = 'word '.repeat(40).trim();
+    expect(leadOf(post('n', '2026-11-04T13:33:00+01:00', [], 'note', '', long))).toEqual({ title: '', text: long });
+  });
+  it('a picture post never gets a lead: its text is a caption', () => {
+    expect(leadOf(post('p', '2026-11-04T13:33:00+01:00', [], 'photo', '', 'Caption'))).toEqual({ title: '', text: 'Caption' });
+  });
+});

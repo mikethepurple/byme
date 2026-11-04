@@ -9,7 +9,7 @@ import Grid from '../components/Grid.astro';
 import Head from '../components/Head.astro';
 import More from '../components/More.astro';
 import PostView from '../components/Post.astro';
-import { KIND_LABEL, MISC, dateRange, excerpt, projectOf, readMinutes, titleOf, stackEdges } from '../lib/related';
+import { KIND_LABEL, MISC, leadOf, dateRange, excerpt, projectOf, readMinutes, titleOf, stackEdges } from '../lib/related';
 import { formatDate } from '../lib/posts';
 import { tagsPresent } from '../lib/tags';
 import {
@@ -152,7 +152,7 @@ const postMore = post ? ofProject(postProj).filter((x) => x.id !== post.id) : []
 // An untitled text post whose whole text is one short line: that line is its title, and nothing repeats below.
 // A picture post's text is its caption, under the picture, never a headline.
 const visualPost = !!post && post.data.images.length > 0;
-const postLead = post && !visualPost && !post.title && post.plain && !post.plain.includes('\n') && post.plain.length <= 140 ? post.plain : '';
+const postLead = post && !post.title ? leadOf(post).title : '';
 const postTitle = post ? postLead || post.title || (post.plain && !visualPost ? titleOf(post, 80) : undefined) : undefined;
 const offset = post?.data.date.match(/(Z|[+-]\d\d:?\d\d)$/)?.[1];
 ---

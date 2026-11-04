@@ -34,6 +34,8 @@ export interface LedgerRow {
 /** What a post is called: its title, else "2 photos", "Photo", or its first words. */
 export function titleOf(p: Pick<Like, 'title' | 'kind' | 'plain' | 'images'>, max = 60): string {
   if (p.title) return p.title;
+  // a picture with a caption is called by its caption
+  if ((p.kind === 'set' || p.kind === 'photo') && p.plain.trim()) return excerpt(p.plain.trim().split('\n')[0], max);
   if (p.kind === 'set') return `${p.images} photos`;
   if (p.kind === 'photo') return 'Photo';
   return excerpt(p.plain.split('\n')[0] ?? '', max) || KIND_LABEL[p.kind];
@@ -101,4 +103,19 @@ export function padTo(count: number, n: number): number {
 export function stackEdges(n: number): number {
   // one edge per post, at most 10 (Misha 31.10: the edges read as the post count)
   return Math.max(0, Math.min(10, n));
+}
+
+/** Longest one-line text that still reads as a title. */
+export const LEAD_CHARS = 140;
+
+/**
+ * What a post shows as its headline and its text. An untitled text post whose
+ * whole text is one short line reads as a title with nothing under it; a
+ * picture post's text is always its caption, never a headline.
+ */
+export function leadOf(p: Pick<Like, 'title' | 'plain' | 'images'>): { title: string; text: string } {
+  const plain = p.plain.trim();
+  if (p.title) return { title: p.title, text: plain };
+  if (p.images === 0 && plain && !plain.includes('\n') && plain.length <= LEAD_CHARS) return { title: plain, text: '' };
+  return { title: '', text: plain };
 }

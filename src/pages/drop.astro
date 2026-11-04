@@ -28,7 +28,7 @@ const things = (await getCollection('things')).sort((a, b) => a.data.order - b.d
   <main id="drop">
     <header>
       <a href="/" class="brand"><span class="dot"></span>by.erikov.me</a>
-      <span class="quiet">drop anything</span>
+      <span class="quiet">drop anything · <button type="button" id="change-key" class="link">key</button></span>
     </header>
 
     <form id="key-form" hidden>
@@ -89,6 +89,12 @@ const things = (await getCollection('things')).sort((a, b) => a.data.order - b.d
       if (yes) $<HTMLInputElement>('key').focus();
     };
     showKey(!key());
+    // change a wrong or old key at any time
+    $<HTMLButtonElement>('change-key').addEventListener('click', () => {
+      const k = $<HTMLInputElement>('key');
+      k.value = '';
+      showKey(true);
+    });
     keyForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const v = $<HTMLInputElement>('key').value.trim();
@@ -250,6 +256,7 @@ const things = (await getCollection('things')).sort((a, b) => a.data.order - b.d
     .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
     .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
     .quiet { color: var(--quiet); font-size: 13px; }
+    .link { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 
     #key-form { padding: 18px 0; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--quiet); }
     .key-row { display: flex; gap: 10px; margin-top: 8px; }
