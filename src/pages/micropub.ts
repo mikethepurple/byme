@@ -86,10 +86,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
     console.log(`[micropub] ${request.method} refused: ${request.headers.get('Authorization') ? 'wrong key' : 'no Authorization header'}`);
     return json({ error: 'unauthorized', error_description: 'Wrong or missing publishing key' }, 401);
   }
-  if (!env.githubToken) return new Response('GitHub token not configured', { status: 500 });
+  if (!env.githubToken) return json({ error: 'server_error', error_description: 'GitHub token not configured' }, 500);
 
   const length = Number(request.headers.get('content-length') ?? 0);
-  if (length > MAX_UPLOAD_BYTES * 1.4) return new Response('Request too large', { status: 413 });
+  if (length > MAX_UPLOAD_BYTES * 1.4) return json({ error: 'invalid_request', error_description: 'Request too large' }, 413);
 
   try {
     const inc = await parseMicropubRequest(request);
