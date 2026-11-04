@@ -105,6 +105,8 @@ a {
 }
 
 a { text-decoration-thickness: 1px; }
+/* v3 §2: a link turns gray on hover; card titles keep their ink (their own rule wins) */
+a:hover { color: var(--ink-2); }
 
 /* --- Blocks of text --- */
 

@@ -43,7 +43,7 @@ export function titleOf(p: Pick<Like, 'title' | 'kind' | 'plain' | 'images'>, ma
 
 /**
  * The latest posts as rows of kind · title · date, at most n, never two rows
- * that read the same; blank rows pad to n.
+ * that read the same; no blank rows (hand-over v3).
  */
 export function ledger(posts: Like[], n: number): LedgerRow[] {
   const rows: LedgerRow[] = [];
@@ -57,7 +57,6 @@ export function ledger(posts: Like[], n: number): LedgerRow[] {
     seen.add(key);
     rows.push(row);
   }
-  while (rows.length < n) rows.push({ id: '', kind: '', title: '', date: '' });
   return rows;
 }
 
@@ -101,8 +100,9 @@ export function padTo(count: number, n: number): number {
 
 /** Edges under a project frame: none without posts, then 1 + log2(n)·1.6, at most 10. */
 export function stackEdges(n: number): number {
-  // one edge per post, at most 10 (Misha 31.10: the edges read as the post count)
-  return Math.max(0, Math.min(10, n));
+  // hand-over v3 (04.11): grows slowly with the count so the stack stays under ~30px
+  // and the frame keeps its room; replaces «one edge per post» (31.10)
+  return n <= 0 ? 0 : Math.min(10, Math.round(1 + Math.log2(n) * 1.6));
 }
 
 /** Longest one-line text that still reads as a title. */

@@ -2,12 +2,13 @@
 // One cell of the grid, the hand-over's Cell: a project card or a post, 380px
 // tall, every value as in the HTML.
 //
-// Project: "Project" and the index in the project's colour; a ledger — an ink
-// rule, always four rows (kind | title | date), blank rows as hairlines, a
-// footer "{n} posts · all →" in the colour; the name (56/600), a description
-// with room for two lines, a link row that is always 30px. The name is the
+// Project (hand-over v3 §6, one skeleton for every card): the same meta row as
+// a post ("Project" and the index in the project's colour), then the frame
+// where a photo would sit: the name (56/600), a description with room for two
+// lines, a spacer, a ledger of the 3 latest posts (no blank rows) and a footer
+// "{n} posts · all →" in the colour with the ↗ link. The stack of edges sits
+// right under the frame and ends on the card's bottom line. The name is the
 // inward link, stretched over the card; the ↗ link is separate and above it.
-// A heavier line under the card sets the project row apart (FIXES.md §6, 9d).
 //
 // Post: "Kind · Project" (misc in gray), the date on the right; a picture, or
 // the title (20/500) and an excerpt of about 300 characters.
@@ -31,8 +32,6 @@ const { thing, index = 0, theirs = [], post, names = new Map(), hues = new Map()
 const thingHue: Hue | undefined = thing ? (thing.data.color ? { c: thing.data.color, cd: thing.data.colorDark || thing.data.color } : MISC_HUE) : undefined;
 const rows = thing ? ledger(theirs, 3) : [];
 const edges = stackEdges(theirs.length);
-// Version A (tinted tab) or B (ink only), chosen at build time for the A/B previews.
-const tab = (import.meta.env.PUBLIC_DESIGN ?? 'b') === 'a';
 const count = theirs.length;
 
 const imgs = post?.data.images ?? [];
@@ -47,12 +46,13 @@ const aria = post ? `${titleOf(post, 80)}, ${formatShort(post.data.date)}` : '';
 
 {
   thing && (
-    <article class:list={['cell', 'project', 'proj', { tab, none: count === 0 }]} style={hueStyle(thingHue)}>
+    <article class:list={['cell', 'project', 'proj', { none: count === 0 }]} style={hueStyle(thingHue)}>
+      <div class="label-row meta">
+        <span>Project</span>
+        <span class="c">{String(index).padStart(2, '0')}</span>
+      </div>
+      <div class="body">
       <div class="frame">
-        <div class="tabrow">
-          <span>Project</span>
-          <span class="c">{String(index).padStart(2, '0')}</span>
-        </div>
         <a href={`/${thing.id}`} class="name" transition:name={`thing-${thing.id}`} aria-label={`${thing.data.name}: all posts`}>
           {thing.data.name}
         </a>
@@ -76,8 +76,11 @@ const aria = post ? `${titleOf(post, 80)}, ${formatShort(post.data.date)}` : '';
           </div>
         </div>
       </div>
-      <div class="stack" aria-hidden="true">
-        {Array.from({ length: edges }).map((_, i) => <div class="edge" style={`margin: 0 ${(i + 1) * 3}px`} />)}
+      {edges > 0 && (
+        <div class="stack" aria-hidden="true">
+          {Array.from({ length: edges }).map((_, i) => <div class="edge" style={`margin: 0 ${(i + 1) * 3}px`} />)}
+        </div>
+      )}
       </div>
     </article>
   )
@@ -132,17 +135,19 @@ const aria = post ? `${titleOf(post, 80)}, ${formatShort(post.data.date)}` : '';
     display: flex;
     flex-direction: column;
   }
-  .label-row { font-size: 13px; }
+  .label-row { font-size: 13px; line-height: 16px; }
+  .meta { display: flex; justify-content: space-between; }
   .label-row a { color: inherit; text-decoration: none; position: relative; z-index: 1; }
   .label-row a:hover { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
   .c, .label-row a.who { color: var(--pc); }
   .quiet { color: var(--quiet); }
 
-  /* the project card: a framed stack (hand-over 18c / 14b) */
-  .project { padding: 14px 14px 0; }
+  /* the project card: the frame sits where a photo would, the stack under it (v3 §6) */
+  .project { gap: 12px; }
+  .body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .frame {
-    height: 320px;
-    flex-shrink: 0;
+    flex: 1;
+    min-height: 0;
     box-sizing: border-box;
     border: 1px solid var(--ink);
     padding: 12px 14px;
@@ -150,15 +155,8 @@ const aria = post ? `${titleOf(post, 80)}, ${formatShort(post.data.date)}` : '';
     flex-direction: column;
   }
   .project.none .frame { border-style: dashed; border-color: var(--dash); }
-  .tabrow { display: flex; justify-content: space-between; font-size: 13px; }
-  .project.tab .tabrow {
-    background: color-mix(in srgb, var(--pc) 8%, var(--bg));
-    margin: -12px -14px 0;
-    padding: 9px 14px;
-    border-bottom: 1px solid var(--line);
-  }
   .name {
-    margin-top: 14px;
+    margin-top: 0;
     font-size: 56px;
     font-weight: 600;
     letter-spacing: -0.045em;
@@ -183,14 +181,12 @@ const aria = post ? `${titleOf(post, 80)}, ${formatShort(post.data.date)}` : '';
     border-bottom: 1px solid var(--line);
     font-size: 13px;
     line-height: 16px;
-    min-height: 31px; /* an empty row is as tall as a full one, so ledgers line up */
-    box-sizing: border-box;
   }
   .lrow .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .lfoot { display: flex; justify-content: space-between; padding: 7px 0 0; font-size: 13px; line-height: 16px; }
   .ext { position: relative; z-index: 1; color: var(--ink); }
 
-  .stack { height: 32px; flex-shrink: 0; overflow: hidden; display: flex; flex-direction: column; }
+  .stack { flex: none; display: flex; flex-direction: column; }
   .edge { height: 3px; flex-shrink: 0; box-sizing: border-box; border: 1px solid var(--edge); border-top: none; }
 
   /* a post */

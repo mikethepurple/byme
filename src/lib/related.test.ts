@@ -28,14 +28,15 @@ describe('projectOf — a post belongs to its first project, or to misc', () => 
   });
 });
 
-describe('ledger — the latest posts of a project, always n rows', () => {
-  it('fills the rows, newest first, and pads with blanks', () => {
+describe('ledger — the latest posts of a project, at most n rows (hand-over v3: no blank rows)', () => {
+  it('lists the posts there are, newest first, and no blank rows', () => {
     const rows = ledger(posts.filter((p) => projectOf(p) === 'ada'), 4);
-    expect(rows).toHaveLength(4);
+    expect(rows).toHaveLength(2);
     expect(rows[0]).toMatchObject({ kind: 'Note', title: 'Test from curl' });
     expect(rows[1]).toMatchObject({ kind: 'Photo', title: 'Photo' });
-    expect(rows[2]).toEqual({ kind: '', title: '', date: '', id: '' });
-    expect(rows[3]).toEqual({ kind: '', title: '', date: '', id: '' });
+  });
+  it('no posts, no rows', () => {
+    expect(ledger([], 3)).toEqual([]);
   });
   it('cuts at n', () => {
     expect(ledger(posts, 2)).toHaveLength(2);
@@ -115,10 +116,10 @@ describe('padTo — the last row filled out', () => {
   });
 });
 
-describe('stackEdges — a project card shows one edge per post, slowly, never solid', () => {
-  it('follows the hand-over table', async () => {
+describe('stackEdges — hand-over v3: min(10, round(1 + log2(n) * 1.6)), none for no posts', () => {
+  it('follows the hand-over table (1→1, 2→3, 5→5, 20→8, 50→10)', async () => {
     const { stackEdges } = await import('./related');
-    expect([0, 1, 2, 3, 5, 10, 14, 500].map(stackEdges)).toEqual([0, 1, 2, 3, 5, 10, 10, 10]);
+    expect([0, 1, 2, 5, 20, 50, 500].map(stackEdges)).toEqual([0, 1, 3, 5, 8, 10, 10]);
   });
 });
 

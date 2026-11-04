@@ -61,6 +61,11 @@ const for2 = count === 0 ? 1 : padTo(count, 2);
       linear-gradient(to right, transparent calc(66.667% - 1px), var(--line) calc(66.667% - 1px), var(--line) 66.667%, transparent 66.667%);
   }
 
+  /* beside the menu, the menu's own left line is the only line (v3 §0: never doubled);
+     the 2-column filler cells come last in the DOM, so they don't shift the count */
+  @media (min-width: 1200px) {
+    .grid > :global(:nth-child(3n)) { border-right: 0; }
+  }
   @media (max-width: 1199px) {
     .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .for3 { display: none; }
