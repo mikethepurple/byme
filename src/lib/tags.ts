@@ -15,12 +15,16 @@ export function normalizeTag(raw: string): string {
 }
 
 /** Categories as sent: project ids become the post's projects, the rest its tags. misc is no tag. */
+// Names Shortcuts sends when a variable never resolved (04.11: "Chosen Item"
+// arrived as a category and became #chosen-item). Never a tag.
+const SHORTCUT_PLACEHOLDERS = new Set(['chosen-item', 'shortcut-input', 'provided-input', 'ask-for-input', 'text', 'repeat-item', 'clipboard', 'current-date']);
+
 export function splitCategories(categories: string[], projects: string[]): { things: string[]; tags: string[] } {
   const things: string[] = [];
   const tags: string[] = [];
   for (const c of categories) {
     const t = normalizeTag(c);
-    if (!t || t === MISC) continue;
+    if (!t || t === MISC || SHORTCUT_PLACEHOLDERS.has(t)) continue;
     const into = projects.includes(t) ? things : tags;
     if (!into.includes(t)) into.push(t);
   }

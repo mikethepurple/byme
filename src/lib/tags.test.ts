@@ -99,3 +99,10 @@ describe('a post from any client: inline #tags reach the categories', () => {
     expect(inc.categories).toEqual(expect.arrayContaining(['detourist', 'light']));
   });
 });
+
+describe('splitCategories — a Shortcut variable that never resolved is not a tag', () => {
+  it('drops Shortcuts placeholder names like "Chosen Item" (04.11: #chosen-item from the iPhone)', async () => {
+    const { splitCategories } = await import('./tags');
+    expect(splitCategories(['Chosen Item', 'Shortcut Input', 'Provided Input', 'Ask for Input', 'Text', 'ada', 'sncf'], ['ada'])).toEqual({ things: ['ada'], tags: ['sncf'] });
+  });
+});
