@@ -37,7 +37,7 @@ export async function getStaticPaths() {
   const things = await loadThings();
   const posts = await loadPosts();
   const paths: { params: { slug: string }; props: Props }[] = [];
-  const reserved = new Set<string>([...LANES, 'everything', 'page', 'about', MISC, 'rss.xml', 'micropub', 'auth', 'keystatic', 'tag']);
+  const reserved = new Set<string>([...LANES, 'everything', 'page', 'about', MISC, 'rss.xml', 'micropub', 'auth', 'keystatic', 'tag', 'drop']);
 
   paths.push({ params: { slug: 'everything' }, props: { type: 'browse' } });
   // Every combination of project × when × kind has an address:
@@ -124,7 +124,7 @@ if (props.type === 'browse') {
     hue = hueOf(props.thing);
     filterLabel = `filter: ${nameOf(props.thing)}`;
     const t = things.find((x) => x.id === props.thing);
-    description = props.thing === MISC ? "Posts that don't belong to a project." : t?.data.line || undefined;
+    description = props.thing === MISC ? "Not sure what to do with these yet." : t?.data.line || undefined;
     image = t?.data.cover?.src;
   } else if (props.lane || props.month || props.tag) {
     filterLabel = `filter: ${title}`;

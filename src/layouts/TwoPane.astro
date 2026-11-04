@@ -79,7 +79,8 @@ const shortHead = Astro.props.shortHead ?? false;
     min-width: 0;
   }
   .head.short { min-height: 0; }
-  .content { grid-column: 1; grid-row: 2; min-width: 0; }
+  /* a column, so the grid's column lines can fill what is left of the window and no more */
+  .content { grid-column: 1; grid-row: 2; min-width: 0; display: flex; flex-direction: column; }
   .shell:not(.headed) .content { grid-row: 1 / -1; }
 
   .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); font-size: 18px; }
@@ -104,6 +105,7 @@ const shortHead = Astro.props.shortHead ?? false;
       background: var(--bg);
     }
     .head { min-height: 0; }
+    .content { flex: 1; }
     .menu {
       display: none;
       position: fixed;

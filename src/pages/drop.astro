@@ -1,0 +1,283 @@
+---
+// /drop — the quickest way to post. One box: paste, drop or pick pictures,
+// type something or nothing, send. The site sorts it out (kind from what was
+// sent, project from a picked chip or the #tags). Pictures are turned into
+// JPEG in the browser and shrunk to 2400px, so iPhone HEIC and huge files
+// just work. The publishing key is asked once and kept in this browser.
+import { getCollection } from 'astro:content';
+
+export const prerender = true;
+
+const things = (await getCollection('things')).sort((a, b) => a.data.order - b.data.order);
+---
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#f2f1ee" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Drop" />
+  <link rel="manifest" href="/drop.webmanifest" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <title>Drop — by.erikov.me</title>
+</head>
+<body>
+  <main id="drop">
+    <header>
+      <a href="/" class="brand"><span class="dot"></span>by.erikov.me</a>
+      <span class="quiet">drop anything</span>
+    </header>
+
+    <form id="key-form" hidden>
+      <label for="key">Publishing key, once on this device</label>
+      <div class="key-row">
+        <input id="key" type="password" autocomplete="current-password" placeholder="paste the key" />
+        <button type="submit">Save</button>
+      </div>
+    </form>
+
+    <form id="post-form">
+      <div id="pics" class="pics" hidden></div>
+      <textarea id="text" placeholder="Paste or drop pictures, write something, or both" autofocus></textarea>
+
+      <div class="chips" role="radiogroup" aria-label="Project">
+        <label><input type="radio" name="project" value="" checked /><span>auto</span></label>
+        {things.map((t) => (
+          <label style={`--c: ${t.data.color || 'inherit'}`}><input type="radio" name="project" value={t.id} /><span>{t.data.name}</span></label>
+        ))}
+      </div>
+
+      <div class="bar">
+        <label class="add">
+          <input id="file" type="file" accept="image/*" multiple />
+          <span>+ pictures</span>
+        </label>
+        <span id="status" class="quiet" aria-live="polite"></span>
+        <button id="send" type="submit">Send</button>
+      </div>
+    </form>
+    <p class="hint quiet">#tags anywhere in the text are kept; a project name as a tag files it there. ⌘↵ sends.</p>
+  </main>
+
+  <div id="veil" hidden>Drop to add</div>
+
+  <script>
+    import { fitWithin, dropForm } from '../lib/drop';
+
+    const KEY = 'drop-key';
+    const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+    const keyForm = $<HTMLFormElement>('key-form');
+    const postForm = $<HTMLFormElement>('post-form');
+    const text = $<HTMLTextAreaElement>('text');
+    const pics = $<HTMLDivElement>('pics');
+    const file = $<HTMLInputElement>('file');
+    const status = $<HTMLSpanElement>('status');
+    const send = $<HTMLButtonElement>('send');
+    const veil = $<HTMLDivElement>('veil');
+
+    // the pictures waiting to go: the original file, and its JPEG once ready
+    type Pic = { id: number; ready: Promise<Blob> };
+    let pending: Pic[] = [];
+    let seq = 0;
+
+    const key = () => localStorage.getItem(KEY) ?? '';
+    const showKey = (yes: boolean) => {
+      keyForm.hidden = !yes;
+      if (yes) $<HTMLInputElement>('key').focus();
+    };
+    showKey(!key());
+    keyForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const v = $<HTMLInputElement>('key').value.trim();
+      if (!v) return;
+      localStorage.setItem(KEY, v);
+      showKey(false);
+      text.focus();
+    });
+
+    function load(f: Blob): Promise<HTMLImageElement> {
+      return new Promise((res, rej) => {
+        const img = new Image();
+        img.onload = () => res(img);
+        img.onerror = () => rej(new Error('cannot read this picture'));
+        img.src = URL.createObjectURL(f);
+      });
+    }
+
+    async function toJpeg(f: Blob, max = 2400, q = 0.86): Promise<Blob> {
+      const img = await load(f);
+      const { w, h } = fitWithin(img.naturalWidth, img.naturalHeight, max);
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      c.getContext('2d')!.drawImage(img, 0, 0, w, h);
+      return new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('cannot encode'))), 'image/jpeg', q));
+    }
+
+    function addFiles(files: Iterable<File>) {
+      for (const f of files) {
+        if (!f.type.startsWith('image/') && !/\.(heic|heif|jpe?g|png|webp|gif)$/i.test(f.name)) continue;
+        const id = ++seq;
+        const ready = toJpeg(f);
+        pending.push({ id, ready });
+        const cell = document.createElement('div');
+        cell.className = 'pic';
+        cell.dataset.id = String(id);
+        const x = document.createElement('button');
+        x.type = 'button';
+        x.textContent = '×';
+        x.ariaLabel = 'Remove';
+        x.onclick = () => {
+          pending = pending.filter((p) => p.id !== id);
+          cell.remove();
+          pics.hidden = pending.length === 0;
+        };
+        cell.append(x);
+        pics.append(cell);
+        ready
+          .then((b) => {
+            const im = new Image();
+            im.src = URL.createObjectURL(b);
+            cell.prepend(im);
+          })
+          .catch(() => {
+            cell.classList.add('bad');
+            cell.prepend(Object.assign(document.createElement('span'), { textContent: 'this browser can’t read it — try Safari' }));
+          });
+      }
+      pics.hidden = pending.length === 0;
+    }
+
+    file.addEventListener('change', () => {
+      if (file.files) addFiles(file.files);
+      file.value = '';
+    });
+
+    // paste: pictures go to the strip, text goes into the box as usual
+    document.addEventListener('paste', (e) => {
+      const files = [...(e.clipboardData?.files ?? [])];
+      if (files.length) {
+        e.preventDefault();
+        addFiles(files);
+      }
+    });
+
+    // drop anywhere on the page
+    let depth = 0;
+    const hasFiles = (e: DragEvent) => [...(e.dataTransfer?.types ?? [])].includes('Files');
+    window.addEventListener('dragenter', (e) => {
+      if (!hasFiles(e)) return;
+      depth++;
+      veil.hidden = false;
+    });
+    window.addEventListener('dragleave', (e) => {
+      if (!hasFiles(e)) return;
+      if (--depth <= 0) { depth = 0; veil.hidden = true; }
+    });
+    window.addEventListener('dragover', (e) => { if (hasFiles(e)) e.preventDefault(); });
+    window.addEventListener('drop', (e) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      depth = 0;
+      veil.hidden = true;
+      addFiles(e.dataTransfer!.files);
+    });
+
+    text.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) postForm.requestSubmit();
+    });
+
+    postForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!key()) return showKey(true);
+      if (!text.value.trim() && pending.length === 0) {
+        status.textContent = 'nothing to send';
+        return;
+      }
+      send.disabled = true;
+      status.textContent = 'sending…';
+      try {
+        let photos = await Promise.all(pending.map((p) => p.ready.catch(() => null)));
+        let blobs = photos.filter((b): b is Blob => !!b);
+        // the endpoint takes about 10 MB per post: shrink harder when a big set would not fit
+        if (blobs.reduce((n, b) => n + b.size, 0) > 9_000_000) blobs = await Promise.all(blobs.map((b) => toJpeg(b, 1600, 0.8)));
+        const project = (postForm.querySelector('input[name=project]:checked') as HTMLInputElement | null)?.value ?? '';
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const res = await fetch('/micropub', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${key()}` },
+          body: dropForm({ text: text.value, project, photos: blobs, tz }),
+        });
+        if (res.status === 401) {
+          localStorage.removeItem(KEY);
+          status.textContent = 'wrong key — paste it again';
+          showKey(true);
+          return;
+        }
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          status.textContent = `not sent: ${err.error_description ?? res.status}`;
+          return;
+        }
+        const where = res.headers.get('Location') ?? '/';
+        text.value = '';
+        pending = [];
+        pics.replaceChildren();
+        pics.hidden = true;
+        (postForm.querySelector('input[name=project][value=""]') as HTMLInputElement).checked = true;
+        status.innerHTML = '';
+        status.append('sent — live in about a minute: ', Object.assign(document.createElement('a'), { href: where, textContent: new URL(where, location.href).pathname }));
+        text.focus();
+      } catch (err) {
+        status.textContent = `not sent: ${err instanceof Error ? err.message : 'no connection'} — nothing was lost, try again`;
+      } finally {
+        send.disabled = false;
+      }
+    });
+  </script>
+
+  <style is:global>
+    @import '../styles/global.css';
+  </style>
+  <style is:global>
+    [hidden] { display: none !important; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); }
+    main { max-width: 760px; margin: 0 auto; padding: max(16px, env(safe-area-inset-top)) 20px 40px; display: flex; flex-direction: column; min-height: 100dvh; box-sizing: border-box; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 6px 0 18px; border-bottom: 1px solid var(--line); font-size: 18px; }
+    .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+    .quiet { color: var(--quiet); font-size: 13px; }
+
+    #key-form { padding: 18px 0; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--quiet); }
+    .key-row { display: flex; gap: 10px; margin-top: 8px; }
+    .key-row input { flex: 1; font: inherit; font-size: 17px; padding: 10px 12px; border: 1px solid var(--line-strong); background: transparent; color: var(--ink); }
+
+    #post-form { display: flex; flex-direction: column; flex: 1; }
+    .pics { display: flex; gap: 10px; overflow-x: auto; padding: 16px 0 4px; }
+    .pic { position: relative; flex: none; width: 120px; height: 120px; overflow: hidden; text-align: center; padding: 0 8px; box-sizing: border-box; background: var(--shade); display: grid; place-items: center; font-size: 12px; color: var(--quiet); }
+    .pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+    .pic button { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; border: 0; border-radius: 50%; background: rgba(0, 0, 0, 0.6); color: #fff; font-size: 16px; line-height: 26px; padding: 0; cursor: pointer; }
+    textarea { flex: 1; min-height: 40vh; font: inherit; font-size: 19px; line-height: 1.5; border: 0; padding: 18px 0; background: transparent; color: var(--ink); resize: none; outline: none; }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 0; border-top: 1px solid var(--line); }
+    .chips label { cursor: pointer; }
+    .chips input { position: absolute; opacity: 0; pointer-events: none; }
+    .chips span { display: inline-block; padding: 6px 12px; border: 1px solid var(--line-strong); font-size: 15px; }
+    .chips input:checked + span { border-color: var(--ink); background: var(--ink); color: var(--bg); }
+    .chips input:focus-visible + span { outline: 2px solid var(--accent); }
+
+    .bar { display: flex; align-items: center; gap: 16px; padding: 12px 0; border-top: 1px solid var(--line); position: sticky; bottom: 0; background: var(--bg); }
+    .add { cursor: pointer; font-size: 17px; }
+    .add input { display: none; }
+    #status { flex: 1; }
+    button[type='submit'] { font: inherit; font-size: 17px; padding: 10px 22px; border: 0; background: var(--ink); color: var(--bg); cursor: pointer; }
+    button[type='submit']:disabled { opacity: 0.5; cursor: wait; }
+    .hint { margin: 4px 0 0; }
+
+    #veil { position: fixed; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--bg) 85%, transparent); border: 2px dashed var(--ink); font-size: 28px; pointer-events: none; }
+  </style>
+</body>
+</html>

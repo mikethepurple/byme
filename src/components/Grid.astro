@@ -53,9 +53,9 @@ const for2 = count === 0 ? 1 : padTo(count, 2);
     border-bottom: 1px solid var(--line);
     font-size: 15px;
   }
-  /* the column lines continue under the content */
+  /* the column lines continue under the content, down to the bottom of the window, never past it */
   .lines {
-    min-height: 100vh;
+    flex: 1;
     background-image:
       linear-gradient(to right, transparent calc(33.333% - 1px), var(--line) calc(33.333% - 1px), var(--line) 33.333%, transparent 33.333%),
       linear-gradient(to right, transparent calc(66.667% - 1px), var(--line) calc(66.667% - 1px), var(--line) 66.667%, transparent 66.667%);
@@ -66,7 +66,6 @@ const for2 = count === 0 ? 1 : padTo(count, 2);
     .for3 { display: none; }
     .for2 { display: block; }
     .lines {
-      min-height: 40vh;
       background-image: linear-gradient(to right, transparent calc(50% - 1px), var(--line) calc(50% - 1px), var(--line) 50%, transparent 50%);
     }
   }

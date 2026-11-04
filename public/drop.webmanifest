@@ -1,0 +1,10 @@
+{
+  "name": "Drop to by.erikov.me",
+  "short_name": "Drop",
+  "start_url": "/drop",
+  "scope": "/drop",
+  "display": "standalone",
+  "background_color": "#f2f1ee",
+  "theme_color": "#f2f1ee",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
