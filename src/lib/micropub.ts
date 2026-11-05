@@ -99,7 +99,7 @@ export async function parseMicropubRequest(req: Request): Promise<Incoming> {
     .join(' ');
   for (const [k, v] of raw.entries()) {
     const base = k.replace(/\[\]$/, '');
-    if (typeof v !== 'string' && base !== 'photo' && v.size < 64_000 && !/^image\//.test(v.type)) {
+    if (typeof v !== 'string' && base !== 'photo' && (base === 'photo_base64' || (v.size < 64_000 && !/^image\//.test(v.type)))) {
       fd.append(k, (await v.text()).trim());
     } else {
       fd.append(k, v);
@@ -130,11 +130,37 @@ export async function parseMicropubRequest(req: Request): Promise<Incoming> {
       inc.photos.push({ kind: 'file', name: v.name, type: v.type, data: new Uint8Array(await v.arrayBuffer()) });
     }
   }
+  // The iOS share Shortcut: a form File field sends only the first item of a
+  // list, so it sends every picture base64-encoded, comma-separated, in one field.
+  for (const v of all('photo_base64')) {
+    if (typeof v !== 'string') continue;
+    for (const [i, chunk] of v.split(',').entries()) {
+      const clean = chunk.replace(/\s+/g, '');
+      if (!clean) continue;
+      let bin: string;
+      try {
+        bin = atob(clean);
+      } catch {
+        throw new MicropubError(400, `photo_base64 item ${i + 1} is not base64`);
+      }
+      const data = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+      const type = sniffImageType(data);
+      inc.photos.push({ kind: 'file', name: `photo-${i + 1}.${type.split('/')[1] || 'bin'}`, type, data });
+    }
+  }
   const li = liftImages(inc.content, inc.name);
   inc.content = li.content;
   inc.name = li.name;
   inc.photos.push(...li.urls.map((url) => ({ kind: 'url' as const, url })));
   return inc;
+}
+
+function sniffImageType(d: Uint8Array): string {
+  if (d[0] === 0xff && d[1] === 0xd8) return 'image/jpeg';
+  if (d[0] === 0x89 && d[1] === 0x50 && d[2] === 0x4e && d[3] === 0x47) return 'image/png';
+  if (d[0] === 0x47 && d[1] === 0x49 && d[2] === 0x46) return 'image/gif';
+  if (d[8] === 0x57 && d[9] === 0x45 && d[10] === 0x42 && d[11] === 0x50) return 'image/webp';
+  return 'application/octet-stream';
 }
 
 function validZone(z?: string): string | undefined {

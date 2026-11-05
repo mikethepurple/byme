@@ -84,6 +84,35 @@ describe('parseMicropubRequest — three encodings, one post model', () => {
   });
 });
 
+describe('parseMicropubRequest — several pictures from the iOS share Shortcut', () => {
+  // A Shortcuts form File field sends only the first item of a list, so the
+  // share Shortcut sends every picture base64-encoded in one text field.
+  const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
+  const b64 = (u: Uint8Array) => btoa(String.fromCharCode(...u));
+  it('reads photo_base64 as one picture per comma-separated item, in order', async () => {
+    const fd = new FormData();
+    fd.append('h', 'entry');
+    fd.append('content', 'three');
+    fd.append('photo_base64', [b64(jpeg), b64(png), b64(jpeg)].join(','));
+    const inc = await parseMicropubRequest(new Request('https://by.erikov.me/micropub', { method: 'POST', body: fd }));
+    expect(inc.photos.map((p) => (p.kind === 'file' ? p.type : p.kind))).toEqual(['image/jpeg', 'image/png', 'image/jpeg']);
+    expect(inc.photos[0]).toMatchObject({ kind: 'file', data: jpeg });
+    expect(inc.content).toBe('three');
+  });
+  it('reads photo_base64 sent as a large text file part, with line breaks', async () => {
+    const big = new Uint8Array(80_000).fill(7);
+    big.set([0xff, 0xd8, 0xff]);
+    const fd = new FormData();
+    fd.append('h', 'entry');
+    const body = [b64(big), b64(jpeg)].join(',\n').replace(/(.{76})/g, '$1\r\n');
+    fd.append('photo_base64', new File([body], 'text.txt', { type: 'text/plain' }));
+    const inc = await parseMicropubRequest(new Request('https://by.erikov.me/micropub', { method: 'POST', body: fd }));
+    expect(inc.photos).toHaveLength(2);
+    expect(inc.photos[0]).toMatchObject({ kind: 'file', type: 'image/jpeg' });
+    expect(inc.photos[0].kind === 'file' && inc.photos[0].data.byteLength).toBe(80_000);
+  });
+});
+
 describe('storedDateFor — the wall clock where it was posted', () => {
   const now = new Date('2026-11-03T00:15:00Z');
   it('keeps an explicit published with offset', () => {

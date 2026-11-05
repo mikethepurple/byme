@@ -89,7 +89,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (!env.githubToken) return json({ error: 'server_error', error_description: 'GitHub token not configured' }, 500);
 
   const length = Number(request.headers.get('content-length') ?? 0);
-  if (length > MAX_UPLOAD_BYTES * 1.4) return json({ error: 'invalid_request', error_description: 'Request too large' }, 413);
+  if (length > MAX_UPLOAD_BYTES * 4) return json({ error: 'invalid_request', error_description: 'Request too large' }, 413);
 
   try {
     const inc = await parseMicropubRequest(request);
