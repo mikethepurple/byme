@@ -13,6 +13,7 @@ import {
   MicropubError,
   type Photo,
   categoryList,
+  postedResponse,
 } from '../lib/micropub';
 import { slugFor } from '../lib/slug';
 import { listPostSlugs, commitFiles, GitHubError } from '../lib/github';
@@ -109,7 +110,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     await commitFiles(gh, files, `Post ${slug}${inc.received ? `\n\nReceived: ${inc.received}` : ''}`);
 
     const postUrl = `${new URL(request.url).origin}/${slug}`;
-    return new Response(null, { status: 201, headers: { Location: postUrl } });
+    return postedResponse(postUrl);
   } catch (e) {
     if (e instanceof MicropubError) return json({ error: 'invalid_request', error_description: e.message }, e.status);
     if (e instanceof GitHubError) return json({ error: 'server_error', error_description: e.message }, 502);

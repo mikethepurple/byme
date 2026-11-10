@@ -367,3 +367,12 @@ export function htmlToMarkdown(input: string): string {
   s = decode(s);
   return s.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
 }
+
+// The success body must be JSON with a `url` key: the share Shortcut proves a
+// post by that key, because an If-contains text comparison imports broken on iOS.
+export function postedResponse(url: string): Response {
+  return new Response(JSON.stringify({ ok: true, url }), {
+    status: 201,
+    headers: { 'content-type': 'application/json', Location: url },
+  });
+}

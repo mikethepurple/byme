@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { liftImages, splitTags, categoryList, parseMicropubRequest, storedDateFor, buildPost, isAllowedImage, inboxPathFromUrl } from './micropub';
+import { liftImages, splitTags, categoryList, parseMicropubRequest, storedDateFor, buildPost, isAllowedImage, inboxPathFromUrl, postedResponse } from './micropub';
 
 const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
@@ -303,5 +303,15 @@ describe('htmlToMarkdown — iA Writer may publish HTML instead of Markdown', ()
     const inc = await parseMicropubRequest(req);
     expect(inc.name).toBe('This is an app');
     expect(inc.content).toBe('It will launch');
+  });
+});
+
+describe('postedResponse — a 201 a Shortcut can read', () => {
+  it('carries the post url in a JSON body, keeping Location for /drop and iA Writer', async () => {
+    const res = postedResponse('https://by.erikov.me/2026-11-10-1928');
+    expect(res.status).toBe(201);
+    expect(res.headers.get('Location')).toBe('https://by.erikov.me/2026-11-10-1928');
+    expect(res.headers.get('content-type')).toBe('application/json');
+    expect(await res.json()).toEqual({ ok: true, url: 'https://by.erikov.me/2026-11-10-1928' });
   });
 });
